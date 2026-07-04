@@ -1,5 +1,8 @@
 # Parser Specification
 
+See `docs/parser_design.md` for the detailed pipeline, module boundaries,
+interfaces, diagnostics, tests, and extension points.
+
 Supported hierarchy
 
 Example

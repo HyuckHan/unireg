@@ -33,6 +33,20 @@ class ClauseSegment:
     raw_text: str
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ItemSegment:
+    item_number: str | None
+    text: str
+    raw_text: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubItemSegment:
+    sub_item_number: str
+    text: str
+    raw_text: str
+
+
 _CLAUSE_MARKERS = {
     "①": "1",
     "②": "2",
@@ -56,6 +70,10 @@ _CLAUSE_MARKERS = {
     "⑳": "20",
 }
 _CLAUSE_MARKER_RE = re.compile(f"[{''.join(_CLAUSE_MARKERS)}]")
+_ITEM_MARKER_RE = re.compile(r"(?<![\d.])(?P<number>[1-9]\d?)\.\s*")
+_SUB_ITEM_MARKER_RE = re.compile(
+    r"(?<![가-힣A-Za-z0-9.])(?P<number>[가-하])\.\s*"
+)
 _CHAPTER_RE = re.compile(r"^제\s*(?P<number>\d+)\s*장\s*(?P<title>.*)$")
 _SECTION_RE = re.compile(r"^제\s*(?P<number>\d+)\s*절\s*(?P<title>.*)$")
 _ARTICLE_RE = re.compile(
@@ -138,6 +156,59 @@ def parse_clause_segments(text: str) -> list[ClauseSegment]:
         segments.append(
             ClauseSegment(
                 clause_number=_CLAUSE_MARKERS[marker],
+                text=body,
+                raw_text=raw_text,
+            )
+        )
+
+    return segments
+
+
+def parse_item_segments(text: str) -> list[ItemSegment]:
+    matches = list(_ITEM_MARKER_RE.finditer(text))
+    if not matches:
+        return []
+
+    segments: list[ItemSegment] = []
+    first_match = matches[0]
+    prefix = text[: first_match.start()].strip()
+    if prefix:
+        segments.append(ItemSegment(item_number=None, text=prefix, raw_text=prefix))
+
+    for index, match in enumerate(matches):
+        next_start = (
+            matches[index + 1].start()
+            if index + 1 < len(matches)
+            else len(text)
+        )
+        raw_text = text[match.start() : next_start].strip()
+        number = match.group("number")
+        body = raw_text[match.end() - match.start() :].strip()
+        segments.append(
+            ItemSegment(item_number=number, text=body, raw_text=raw_text)
+        )
+
+    return segments
+
+
+def parse_sub_item_segments(text: str) -> list[SubItemSegment]:
+    matches = list(_SUB_ITEM_MARKER_RE.finditer(text))
+    if not matches:
+        return []
+
+    segments: list[SubItemSegment] = []
+    for index, match in enumerate(matches):
+        next_start = (
+            matches[index + 1].start()
+            if index + 1 < len(matches)
+            else len(text)
+        )
+        raw_text = text[match.start() : next_start].strip()
+        number = match.group("number")
+        body = raw_text[match.end() - match.start() :].strip()
+        segments.append(
+            SubItemSegment(
+                sub_item_number=number,
                 text=body,
                 raw_text=raw_text,
             )

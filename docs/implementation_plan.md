@@ -27,6 +27,10 @@ Completed:
   - `①`, `②`, `③` clause marker detection
   - unnumbered clause fallback
   - article `body_lines` retained for migration compatibility
+- Item and sub-item parser
+  - `1.`, `2.`, `3.` item marker detection
+  - `가.`, `나.`, `다.` sub-item marker detection
+  - continuation lines attach to the last open item or sub-item
 
 ## Milestone 1: Section Parser
 
@@ -86,6 +90,8 @@ Out of scope:
 - Amendment/reference enrichment.
 
 ## Milestone 3: Item and SubItem Parser
+
+Status: implemented.
 
 Goal:
 

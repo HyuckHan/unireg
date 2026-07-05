@@ -121,6 +121,55 @@ def test_parser_builds_clause_hierarchy() -> None:
     assert second_article.clauses[0].text == "번호 없는 본문이다."
 
 
+def test_parser_builds_item_and_sub_item_hierarchy() -> None:
+    text = """
+테스트 규정
+제1장 총칙
+제1조(목적) ① 다음 각 호와 같다. 1. 첫째 항목2. 둘째 항목
+둘째 항목의 이어지는 문장이다.
+제2조(세부) ① 다음 각 목과 같다. 1. 상위 문구 가. 세부 첫째 나. 세부 둘째
+세부 둘째의 이어지는 문장이다.
+"""
+
+    result = RegulationParser().parse_text(text, source_file="item.txt")
+
+    assert result.document is not None
+    articles = result.document.regulation.chapters[0].articles
+    first_clause = articles[0].clauses[0]
+    assert first_clause.text == (
+        "다음 각 호와 같다. 1. 첫째 항목2. 둘째 항목\n"
+        "둘째 항목의 이어지는 문장이다."
+    )
+    assert [item.item_number for item in first_clause.items] == ["1", "2"]
+    assert first_clause.items[0].text == "첫째 항목"
+    assert first_clause.items[0].path == [
+        "chapter:1",
+        "article:1",
+        "clause:1",
+        "item:1",
+    ]
+    assert first_clause.items[1].text == (
+        "둘째 항목\n둘째 항목의 이어지는 문장이다."
+    )
+
+    second_clause = articles[1].clauses[0]
+    item = second_clause.items[0]
+    assert item.item_number == "1"
+    assert item.text == "상위 문구"
+    assert [sub_item.sub_item_number for sub_item in item.sub_items] == ["가", "나"]
+    assert item.sub_items[0].text == "세부 첫째"
+    assert item.sub_items[0].path == [
+        "chapter:1",
+        "article:2",
+        "clause:1",
+        "item:1",
+        "sub-item:가",
+    ]
+    assert item.sub_items[1].text == (
+        "세부 둘째\n세부 둘째의 이어지는 문장이다."
+    )
+
+
 def test_parser_builds_section_hierarchy() -> None:
     text = """
 테스트 규정

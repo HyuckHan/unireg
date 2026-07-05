@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from unireg.models import Clause, CleanLine, merge_source_spans
 from unireg.parser.ids import clause_id
+from unireg.parser.items import ItemParser
 from unireg.parser.patterns import ClauseSegment, parse_clause_segments
 
 
 class ClauseParser:
     """Create clause nodes from article body text."""
+
+    def __init__(self, item_parser: ItemParser | None = None) -> None:
+        self._item_parser = item_parser or ItemParser()
 
     def split(self, text: str) -> list[ClauseSegment]:
         return parse_clause_segments(text)
@@ -23,7 +27,7 @@ class ClauseParser:
         clause_index: int,
     ) -> Clause:
         fragment = segment.clause_number or _unnumbered_fragment(clause_index)
-        return Clause(
+        clause = Clause(
             id=clause_id(article_id, fragment),
             path=[*article_path, f"clause:{fragment}"],
             clause_number=segment.clause_number,
@@ -31,12 +35,14 @@ class ClauseParser:
             raw_text=segment.raw_text,
             source_span=line.source_span,
         )
+        self._item_parser.add_items_from_text(clause, line, segment.text)
+        return clause
 
-    @staticmethod
-    def append_to_clause(clause: Clause, line: CleanLine) -> None:
+    def append_to_clause(self, clause: Clause, line: CleanLine) -> None:
         clause.text = _join_text(clause.text, line.text)
         clause.raw_text = _join_text(clause.raw_text or "", line.text)
         clause.source_span = merge_source_spans(clause.source_span, line.source_span)
+        self._item_parser.append_continuation(clause, line)
 
 
 def _unnumbered_fragment(clause_index: int) -> str:

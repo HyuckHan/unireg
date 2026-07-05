@@ -131,9 +131,16 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
     restored = RegulationDocument.from_dict(payload)
 
     assert restored.to_dict() == payload
-    assert restored.regulation.chapters[0].sections[0].articles[0].clauses[0].items[
-        0
-    ].sub_items[0].sub_item_number == "가"
+    assert (
+        restored.regulation.chapters[0]
+        .sections[0]
+        .articles[0]
+        .clauses[0]
+        .items[0]
+        .sub_items[0]
+        .sub_item_number
+        == "가"
+    )
     assert restored.regulation.references[0].status == ReferenceStatus.MISSING
 
 

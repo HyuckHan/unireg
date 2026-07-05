@@ -579,9 +579,7 @@ class Section:
             status=ProvisionStatus(_required_str(data, "status")),
             raw_text=_optional_str(data, "raw_text"),
             intro_lines=_str_list(data, "intro_lines"),
-            articles=[
-                Article.from_dict(item) for item in _dict_list(data, "articles")
-            ],
+            articles=[Article.from_dict(item) for item in _dict_list(data, "articles")],
         )
 
 
@@ -638,12 +636,8 @@ class Chapter:
             status=ProvisionStatus(_required_str(data, "status")),
             raw_text=_optional_str(data, "raw_text"),
             intro_lines=_str_list(data, "intro_lines"),
-            sections=[
-                Section.from_dict(item) for item in _dict_list(data, "sections")
-            ],
-            articles=[
-                Article.from_dict(item) for item in _dict_list(data, "articles")
-            ],
+            sections=[Section.from_dict(item) for item in _dict_list(data, "sections")],
+            articles=[Article.from_dict(item) for item in _dict_list(data, "articles")],
         )
 
 
@@ -715,9 +709,7 @@ class Regulation:
         """Return every article in document order for currently modeled nodes."""
 
         return [
-            article
-            for chapter in self.chapters
-            for article in chapter.all_articles()
+            article for chapter in self.chapters for article in chapter.all_articles()
         ]
 
     def to_dict(self) -> dict[str, object]:
@@ -769,9 +761,7 @@ class Regulation:
                 for item in _dict_list(data, "amendment_history")
             ],
             preamble_lines=_str_list(data, "preamble_lines"),
-            chapters=[
-                Chapter.from_dict(item) for item in _dict_list(data, "chapters")
-            ],
+            chapters=[Chapter.from_dict(item) for item in _dict_list(data, "chapters")],
             appendices=[
                 Appendix.from_dict(item) for item in _dict_list(data, "appendices")
             ],
@@ -859,9 +849,7 @@ class ParseResult:
     def to_dict(self) -> dict[str, object]:
         return {
             "document": None if self.document is None else self.document.to_dict(),
-            "diagnostics": [
-                diagnostic.to_dict() for diagnostic in self.diagnostics
-            ],
+            "diagnostics": [diagnostic.to_dict() for diagnostic in self.diagnostics],
             "stats": self.stats.to_dict(),
         }
 

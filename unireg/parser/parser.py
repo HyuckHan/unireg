@@ -23,6 +23,7 @@ from unireg.models import (
     Section,
     merge_source_spans,
 )
+from unireg.parser.amendments import AmendmentStatusEnricher
 from unireg.parser.articles import ArticleParser
 from unireg.parser.chapters import ChapterParser
 from unireg.parser.clauses import ClauseParser
@@ -42,6 +43,7 @@ class RegulationParser:
         section_parser: SectionParser | None = None,
         article_parser: ArticleParser | None = None,
         clause_parser: ClauseParser | None = None,
+        amendment_enricher: AmendmentStatusEnricher | None = None,
     ) -> None:
         self._pdf_loader = pdf_loader or PDFLoader()
         self._cleaner = cleaner or DocumentCleaner()
@@ -49,6 +51,7 @@ class RegulationParser:
         self._section_parser = section_parser or SectionParser()
         self._article_parser = article_parser or ArticleParser()
         self._clause_parser = clause_parser or ClauseParser()
+        self._amendment_enricher = amendment_enricher or AmendmentStatusEnricher()
 
     def parse_file(self, source_file: str | Path) -> ParseResult:
         """Parse a source file.
@@ -186,9 +189,7 @@ class RegulationParser:
                     regulation_title=regulation.title,
                     chapter_title=current_chapter.title,
                     section_title=(
-                        current_section.title
-                        if current_section is not None
-                        else None
+                        current_section.title if current_section is not None else None
                     ),
                     line=line,
                     heading=article_heading,
@@ -239,6 +240,7 @@ class RegulationParser:
             )
             unknown_line_count += 1
 
+        self._amendment_enricher.enrich(regulation)
         article_count = len(regulation.all_articles())
         stats = ParseStats(
             line_count=len(document.lines),

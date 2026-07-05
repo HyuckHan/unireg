@@ -31,6 +31,10 @@ Completed:
   - `1.`, `2.`, `3.` item marker detection
   - `가.`, `나.`, `다.` sub-item marker detection
   - continuation lines attach to the last open item or sub-item
+- Amendment and provision status
+  - regulation effective/amendment date extraction
+  - article amendment event extraction
+  - deleted/repealed article status detection
 
 ## Milestone 1: Section Parser
 
@@ -106,6 +110,8 @@ Scope:
 
 ## Milestone 4: Amendment and Provision Status
 
+Status: implemented.
+
 Goal:
 
 - Preserve amendment history and provision status.
@@ -117,6 +123,13 @@ Scope:
 - `[본조신설 ...]`
 - `삭제`
 - repealed/deleted status markers.
+
+Tests:
+
+- regulation title effective and amendment dates
+- article-level amendment history events
+- deleted and repealed article statuses
+- real PDF first article amendment regression
 
 ## Milestone 5: Appendix and Table Placeholders
 

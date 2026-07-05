@@ -41,9 +41,7 @@ def test_parser_builds_chapter_and_article_hierarchy() -> None:
     assert first_chapter.articles[0].regulation_title == "테스트 학칙"
     assert first_chapter.articles[0].chapter_title == "총칙"
     assert first_chapter.sections == []
-    assert first_chapter.articles[0].body_lines == [
-        "이 학칙은 테스트를 목적으로 한다."
-    ]
+    assert first_chapter.articles[0].body_lines == ["이 학칙은 테스트를 목적으로 한다."]
     assert first_chapter.articles[0].clauses[0].clause_number is None
     assert first_chapter.articles[0].clauses[0].text == (
         "이 학칙은 테스트를 목적으로 한다."
@@ -60,9 +58,7 @@ def test_parser_builds_chapter_and_article_hierarchy() -> None:
 
     second_chapter = regulation.chapters[1]
     assert second_chapter.number == "2"
-    assert second_chapter.articles[0].body_lines == [
-        "조직에 관한 사항은 따로 정한다."
-    ]
+    assert second_chapter.articles[0].body_lines == ["조직에 관한 사항은 따로 정한다."]
 
 
 def test_parser_preserves_inserted_article_number() -> None:
@@ -137,8 +133,7 @@ def test_parser_builds_item_and_sub_item_hierarchy() -> None:
     articles = result.document.regulation.chapters[0].articles
     first_clause = articles[0].clauses[0]
     assert first_clause.text == (
-        "다음 각 호와 같다. 1. 첫째 항목2. 둘째 항목\n"
-        "둘째 항목의 이어지는 문장이다."
+        "다음 각 호와 같다. 1. 첫째 항목2. 둘째 항목\n" "둘째 항목의 이어지는 문장이다."
     )
     assert [item.item_number for item in first_clause.items] == ["1", "2"]
     assert first_clause.items[0].text == "첫째 항목"
@@ -148,9 +143,7 @@ def test_parser_builds_item_and_sub_item_hierarchy() -> None:
         "clause:1",
         "item:1",
     ]
-    assert first_clause.items[1].text == (
-        "둘째 항목\n둘째 항목의 이어지는 문장이다."
-    )
+    assert first_clause.items[1].text == ("둘째 항목\n둘째 항목의 이어지는 문장이다.")
 
     second_clause = articles[1].clauses[0]
     item = second_clause.items[0]
@@ -165,9 +158,7 @@ def test_parser_builds_item_and_sub_item_hierarchy() -> None:
         "item:1",
         "sub-item:가",
     ]
-    assert item.sub_items[1].text == (
-        "세부 둘째\n세부 둘째의 이어지는 문장이다."
-    )
+    assert item.sub_items[1].text == ("세부 둘째\n세부 둘째의 이어지는 문장이다.")
 
 
 def test_parser_builds_section_hierarchy() -> None:

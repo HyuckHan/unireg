@@ -80,7 +80,26 @@ Then run:
 
 The evaluation checks parser success, hierarchy counts, citation counts, and
 whether parsed structure spans enough PDF pages to catch first-page-only
-failures.
+failures. It also reports normalized title metadata, extracted institution/code
+values, and non-fatal title warnings.
+
+## Metadata Normalization
+
+Parser output keeps both normalized and raw title metadata:
+
+```python
+from unireg.parser import RegulationParser
+
+result = RegulationParser().parse_file("unireg-eval/university_a/학칙.pdf")
+if result.document is None:
+    raise RuntimeError("No document parsed")
+
+regulation = result.document.regulation
+print(regulation.title)
+print(regulation.raw_title)
+print(regulation.institution)
+print(regulation.regulation_code)
+```
 
 ## Export
 

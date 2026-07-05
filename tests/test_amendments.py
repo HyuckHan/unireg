@@ -18,6 +18,10 @@ def test_parser_enriches_regulation_dates_from_title() -> None:
 
     assert result.document is not None
     regulation = result.document.regulation
+    assert regulation.title == "테스트 규정"
+    assert regulation.raw_title == (
+        "테스트 규정[시행 2026.07.05.] [2026.07.06.,일부개정]"
+    )
     assert regulation.effective_date == date(2026, 7, 5)
     assert regulation.amendment_date == date(2026, 7, 6)
     assert regulation.amendment_history[0].event_type == AmendmentEventType.AMENDED

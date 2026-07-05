@@ -26,7 +26,12 @@ from unireg.models import (
     SubItem,
     Table,
 )
-from unireg.parser import RegulationParser
+from unireg.parser import (
+    MetadataWarning,
+    RegulationMetadata,
+    RegulationMetadataNormalizer,
+    RegulationParser,
+)
 
 __all__ = [
     "AmendmentEvent",
@@ -43,6 +48,7 @@ __all__ = [
     "Item",
     "JSONExporter",
     "MarkdownExporter",
+    "MetadataWarning",
     "NodeType",
     "PDFLoader",
     "ProvisionStatus",
@@ -51,6 +57,8 @@ __all__ = [
     "ReferenceType",
     "Regulation",
     "RegulationDocument",
+    "RegulationMetadata",
+    "RegulationMetadataNormalizer",
     "RegulationParser",
     "Section",
     "SourceSpan",

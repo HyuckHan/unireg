@@ -211,6 +211,9 @@ from datetime import date
 class Regulation:
     id: str
     title: str
+    raw_title: str | None = None
+    title_candidates: list[str] = field(default_factory=list)
+    regulation_code: str | None = None
     node_type: NodeType = field(default=NodeType.REGULATION, init=False)
     path: list[str] = field(default_factory=list)
     institution: str | None = None
@@ -347,6 +350,14 @@ These records support later answer states:
 
 The answer state itself belongs to the QA layer, but the parsed model must carry
 the evidence needed to derive it.
+
+### Regulation Title Metadata
+
+`Regulation.title` is the normalized regulation title used for citation and
+search metadata. `Regulation.raw_title` preserves the original source candidate,
+and `Regulation.title_candidates` records intermediate candidates used during
+normalization. `Regulation.regulation_code` stores catalog identifiers such as
+`2-0-1`.
 
 ## Appendices and Tables
 

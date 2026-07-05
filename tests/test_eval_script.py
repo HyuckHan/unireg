@@ -8,9 +8,10 @@ from scripts.check_eval_pdfs import (
     _page_range_label,
     _pages_from_span,
     _quality_problems,
+    _title_warning_codes,
     _university_name,
 )
-from unireg.models import SourceSpan
+from unireg.models import DiagnosticSeverity, ParseDiagnostic, SourceSpan
 
 
 def test_pages_from_span_returns_inclusive_page_range() -> None:
@@ -84,3 +85,20 @@ def test_page_range_label_formats_missing_single_and_range() -> None:
         )
         == "3-5"
     )
+
+
+def test_title_warning_codes_extract_metadata_diagnostics_only() -> None:
+    diagnostics = [
+        ParseDiagnostic(
+            severity=DiagnosticSeverity.WARNING,
+            code="metadata_title_normalized",
+            message="normalized",
+        ),
+        ParseDiagnostic(
+            severity=DiagnosticSeverity.WARNING,
+            code="article_before_chapter",
+            message="implicit chapter",
+        ),
+    ]
+
+    assert _title_warning_codes(diagnostics) == ["metadata_title_normalized"]

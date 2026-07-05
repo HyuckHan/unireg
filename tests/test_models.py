@@ -146,6 +146,9 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         id="reg",
         title="테스트 규정",
         source_file="sample.pdf",
+        raw_title="테스트 규정[시행 2026.07.05.]",
+        title_candidates=["테스트 규정[시행 2026.07.05.]", "테스트 규정"],
+        regulation_code="2-1-1",
         institution="테스트 대학",
         effective_date=date(2026, 7, 5),
         amendment_date=date(2026, 7, 5),
@@ -181,6 +184,12 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         == "가"
     )
     assert restored.regulation.references[0].status == ReferenceStatus.MISSING
+    assert restored.regulation.raw_title == "테스트 규정[시행 2026.07.05.]"
+    assert restored.regulation.title_candidates == [
+        "테스트 규정[시행 2026.07.05.]",
+        "테스트 규정",
+    ]
+    assert restored.regulation.regulation_code == "2-1-1"
     assert restored.regulation.appendices[0].tables[0].caption == "별표 1"
     assert (
         restored.regulation.chapters[0]

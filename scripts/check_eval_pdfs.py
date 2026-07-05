@@ -15,7 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from unireg.citations import CitationGenerator  # noqa: E402
 from unireg.loaders import PDFLoader  # noqa: E402
-from unireg.models import Article, Regulation, SourceSpan  # noqa: E402
+from unireg.models import Article, ParseDiagnostic, Regulation, SourceSpan  # noqa: E402
 from unireg.parser import RegulationParser  # noqa: E402
 
 
@@ -41,6 +41,10 @@ class EvalResult:
     structural_page_end: int | None = None
     page_coverage: float = 0.0
     title: str = ""
+    raw_title: str = ""
+    institution: str = ""
+    regulation_code: str = ""
+    title_warnings: tuple[str, ...] = ()
     chapter_count: int = 0
     section_count: int = 0
     article_count: int = 0
@@ -146,6 +150,7 @@ def evaluate_pdf(
     structural_pages = _structural_pages(regulation)
     page_coverage = len(structural_pages) / pdf_pages if pdf_pages else 0.0
     citations = citation_generator.generate(parse_result, include_quotes=False)
+    title_warnings = _title_warning_codes(parse_result.diagnostics)
     problems = _quality_problems(
         article_count=counts.article_count,
         page_coverage=page_coverage,
@@ -163,6 +168,10 @@ def evaluate_pdf(
         structural_page_end=max(structural_pages) if structural_pages else None,
         page_coverage=page_coverage,
         title=regulation.title,
+        raw_title=regulation.raw_title or "",
+        institution=regulation.institution or "",
+        regulation_code=regulation.regulation_code or "",
+        title_warnings=tuple(title_warnings),
         chapter_count=parse_result.stats.chapter_count,
         section_count=counts.section_count,
         article_count=parse_result.stats.article_count,
@@ -255,6 +264,14 @@ def _quality_problems(
     return problems
 
 
+def _title_warning_codes(diagnostics: list[ParseDiagnostic]) -> list[str]:
+    return [
+        diagnostic.code
+        for diagnostic in diagnostics
+        if diagnostic.code.startswith("metadata_title_")
+    ]
+
+
 def _discover_pdfs(eval_dir: Path, pattern: str) -> list[Path]:
     return sorted(path for path in eval_dir.rglob(pattern) if path.is_file())
 
@@ -280,6 +297,12 @@ def _format_result(index: int, total: int, result: EvalResult) -> str:
         f"coverage={result.page_coverage:.1%} "
         f"citations={result.citation_count} time={result.elapsed_seconds:.2f}s"
     )
+    if result.institution:
+        message = f"{message} institution={result.institution!r}"
+    if result.regulation_code:
+        message = f"{message} code={result.regulation_code!r}"
+    if result.title_warnings:
+        message = f"{message} title_warnings={','.join(result.title_warnings)}"
     if result.error:
         message = f"{message} error={result.error}"
     return message
@@ -309,6 +332,10 @@ def _write_report(path: Path, results: list[EvalResult]) -> None:
                 "structural_page_end",
                 "page_coverage",
                 "title",
+                "raw_title",
+                "institution",
+                "regulation_code",
+                "title_warnings",
                 "chapter_count",
                 "section_count",
                 "article_count",
@@ -335,6 +362,10 @@ def _write_report(path: Path, results: list[EvalResult]) -> None:
                     "structural_page_end": result.structural_page_end,
                     "page_coverage": f"{result.page_coverage:.3f}",
                     "title": result.title,
+                    "raw_title": result.raw_title,
+                    "institution": result.institution,
+                    "regulation_code": result.regulation_code,
+                    "title_warnings": "|".join(result.title_warnings),
                     "chapter_count": result.chapter_count,
                     "section_count": result.section_count,
                     "article_count": result.article_count,

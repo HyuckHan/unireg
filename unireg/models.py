@@ -765,6 +765,9 @@ class Regulation:
     id: str
     title: str
     source_file: str
+    raw_title: str | None = None
+    title_candidates: list[str] = field(default_factory=list)
+    regulation_code: str | None = None
     path: list[str] = field(default_factory=list)
     institution: str | None = None
     effective_date: date | None = None
@@ -795,6 +798,9 @@ class Regulation:
             "node_type": NodeType.REGULATION.value,
             "title": self.title,
             "source_file": self.source_file,
+            "raw_title": self.raw_title,
+            "title_candidates": self.title_candidates,
+            "regulation_code": self.regulation_code,
             "path": self.path,
             "institution": self.institution,
             "effective_date": (
@@ -827,6 +833,9 @@ class Regulation:
             id=_required_str(data, "id"),
             title=_required_str(data, "title"),
             source_file=_required_str(data, "source_file"),
+            raw_title=_optional_str(data, "raw_title"),
+            title_candidates=_str_list(data, "title_candidates"),
+            regulation_code=_optional_str(data, "regulation_code"),
             path=_str_list(data, "path"),
             institution=_optional_str(data, "institution"),
             effective_date=_optional_date(data, "effective_date"),

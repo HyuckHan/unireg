@@ -284,6 +284,8 @@ total=5 ok=5 failed=0
 
 ## Milestone 9: Metadata and Title Normalization
 
+Status: implemented.
+
 Goal:
 
 - Normalize regulation metadata before search and RAG document generation.
@@ -318,6 +320,17 @@ Tests:
 - noisy title regression for PDFs where first chapter text is attached
 - serialization preserves both raw and normalized metadata
 - evaluation script reports title warnings without failing structural parsing
+
+Implemented behavior:
+
+- `Regulation.title` now stores the normalized title.
+- `Regulation.raw_title` preserves the original source title candidate.
+- `Regulation.title_candidates` preserves intermediate normalization candidates.
+- `Regulation.regulation_code` stores extracted catalog codes.
+- `Regulation.institution` is extracted conservatively when the source contains
+  an institution-level name such as `대학교`.
+- Evaluation reports include normalized title, raw title, institution,
+  regulation code, and metadata warning codes.
 
 ## Milestone 10: Search and RAG Preparation
 

@@ -31,6 +31,7 @@ from unireg.parser.articles import ArticleParser
 from unireg.parser.chapters import ChapterParser
 from unireg.parser.clauses import ClauseParser
 from unireg.parser.ids import chapter_id, regulation_id
+from unireg.parser.metadata import RegulationMetadataNormalizer
 from unireg.parser.patterns import AppendixHeading
 from unireg.parser.references import ReferenceIncompletenessEnricher
 from unireg.parser.sections import SectionParser
@@ -51,6 +52,7 @@ class RegulationParser:
         clause_parser: ClauseParser | None = None,
         appendix_parser: AppendixParser | None = None,
         table_parser: TableParser | None = None,
+        metadata_normalizer: RegulationMetadataNormalizer | None = None,
         amendment_enricher: AmendmentStatusEnricher | None = None,
         reference_enricher: ReferenceIncompletenessEnricher | None = None,
     ) -> None:
@@ -62,6 +64,9 @@ class RegulationParser:
         self._clause_parser = clause_parser or ClauseParser()
         self._appendix_parser = appendix_parser or AppendixParser()
         self._table_parser = table_parser or TableParser()
+        self._metadata_normalizer = (
+            metadata_normalizer or RegulationMetadataNormalizer()
+        )
         self._amendment_enricher = amendment_enricher or AmendmentStatusEnricher()
         self._reference_enricher = (
             reference_enricher or ReferenceIncompletenessEnricher()
@@ -95,17 +100,31 @@ class RegulationParser:
     def parse_clean_document(self, document: CleanDocument) -> ParseResult:
         diagnostics: list[ParseDiagnostic] = []
         title_line = self._find_title_line(document.lines)
-        title = (
-            title_line.text
-            if title_line is not None
-            else Path(document.source_file).stem
+        metadata = self._metadata_normalizer.normalize(
+            source_file=document.source_file,
+            title_line=title_line,
+            lines=document.lines,
         )
-        reg_id = regulation_id(title, document.source_file)
+        reg_id = regulation_id(metadata.title, document.source_file)
         regulation = Regulation(
             id=reg_id,
-            title=title,
+            title=metadata.title,
             source_file=document.source_file,
+            raw_title=metadata.raw_title,
+            title_candidates=metadata.title_candidates,
+            regulation_code=metadata.regulation_code,
+            institution=metadata.institution,
             source_span=title_line.source_span if title_line is not None else None,
+        )
+        diagnostics.extend(
+            ParseDiagnostic(
+                severity=DiagnosticSeverity.WARNING,
+                code=warning.code,
+                message=warning.message,
+                source_span=title_line.source_span if title_line is not None else None,
+                line_text=metadata.raw_title,
+            )
+            for warning in metadata.warnings
         )
 
         current_chapter = None

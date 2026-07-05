@@ -42,13 +42,14 @@ class AmendmentStatusEnricher:
         return regulation
 
     def _enrich_regulation(self, regulation: Regulation) -> None:
-        effective_match = _EFFECTIVE_DATE_RE.search(regulation.title)
+        title_source = regulation.raw_title or regulation.title
+        effective_match = _EFFECTIVE_DATE_RE.search(title_source)
         if effective_match is not None:
             dates = _extract_dates(effective_match.group("date"))
             if dates:
                 regulation.effective_date = dates[0]
 
-        amendment_match = _REGULATION_AMENDMENT_RE.search(regulation.title)
+        amendment_match = _REGULATION_AMENDMENT_RE.search(title_source)
         if amendment_match is not None:
             dates = _extract_dates(amendment_match.group("date"))
             if dates:

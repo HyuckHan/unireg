@@ -334,6 +334,8 @@ Implemented behavior:
 
 ## Milestone 10: Search and RAG Preparation
 
+Status: implemented.
+
 Goal:
 
 - Build downstream projections without changing the canonical parser model.
@@ -344,3 +346,23 @@ Scope:
 - vector documents
 - graph nodes and edges
 - missing-reference graph edges
+
+Implemented behavior:
+
+- `ProjectionBuilder` builds downstream projections from `ParseResult`,
+  `RegulationDocument`, or `Regulation`.
+- `BM25Document` preserves searchable text, citation labels, source labels, and
+  string metadata.
+- `VectorDocument` preserves vector-DB-ready chunks with the same citation and
+  metadata contract.
+- `GraphNode` and `GraphEdge` preserve hierarchy and reference graph structure.
+- Missing or unresolved regulation references become graph edges with
+  `target_node_id=None` and missing-target metadata in edge properties.
+
+Tests:
+
+- search/vector document generation
+- hierarchy graph edge generation
+- missing-reference graph edge generation
+- projection serialization round-trip
+- empty parse result guard

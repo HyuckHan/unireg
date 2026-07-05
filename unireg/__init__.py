@@ -32,17 +32,30 @@ from unireg.parser import (
     RegulationMetadataNormalizer,
     RegulationParser,
 )
+from unireg.projections import (
+    BM25Document,
+    GraphEdge,
+    GraphEdgeType,
+    GraphNode,
+    ProjectionBuilder,
+    ProjectionSet,
+    VectorDocument,
+)
 
 __all__ = [
     "AmendmentEvent",
     "AmendmentEventType",
     "Appendix",
     "Article",
+    "BM25Document",
     "Chapter",
     "Citation",
     "CitationGenerator",
     "Clause",
     "DocumentCleaner",
+    "GraphEdge",
+    "GraphEdgeType",
+    "GraphNode",
     "IncompletenessFlag",
     "IncompletenessType",
     "Item",
@@ -51,6 +64,8 @@ __all__ = [
     "MetadataWarning",
     "NodeType",
     "PDFLoader",
+    "ProjectionBuilder",
+    "ProjectionSet",
     "ProvisionStatus",
     "Reference",
     "ReferenceStatus",
@@ -64,4 +79,5 @@ __all__ = [
     "SourceSpan",
     "SubItem",
     "Table",
+    "VectorDocument",
 ]

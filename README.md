@@ -127,3 +127,17 @@ citations = CitationGenerator().generate(result)
 for citation in citations[:5]:
     print(citation.label, citation.source_label)
 ```
+
+## Search and RAG Projections
+
+```python
+from unireg.parser import RegulationParser
+from unireg.projections import ProjectionBuilder
+
+result = RegulationParser().parse_file("examples/pdf/sample.pdf")
+projection = ProjectionBuilder().build(result)
+
+print(projection.bm25_documents[0].text)
+print(projection.vector_documents[0].metadata)
+print(projection.graph_edges[0].edge_type)
+```

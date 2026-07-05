@@ -435,24 +435,25 @@ class GraphNode:
 
 @dataclass(slots=True, kw_only=True)
 class GraphEdge:
-    source_id: str
-    target_id: str | None
-    edge_type: str
-    properties: dict[str, str]
+    edge_id: str
+    edge_type: GraphEdgeType
+    source_node_id: str
+    target_node_id: str | None
+    properties: dict[str, object]
 ```
 
 Expected graph edges:
 
 - `CONTAINS`: regulation to chapter, chapter to section/article, article to
-  clause, clause to item, item to sub-item.
+  clause, clause to item, item to sub-item, regulation to appendix, appendix to
+  table.
 - `REFERS_TO`: resolved legal reference.
 - `MISSING_REFERENCE`: unresolved or missing referenced rule.
-- `HAS_APPENDIX`: regulation or article to appendix.
-- `HAS_TABLE`: legal node to table.
+- `UNRESOLVED_REFERENCE`: unresolved non-regulation reference.
 - `AMENDED_BY`: node to amendment event, if amendment events become graph nodes.
 
-Missing references should still produce graph edges with `target_id=None` and
-the missing target name in edge properties.
+Missing references should still produce graph edges with `target_node_id=None`
+and the missing target name in edge properties.
 
 ## Vector DB Support
 
@@ -464,8 +465,24 @@ should be derived from citeable legal nodes.
 class VectorDocument:
     chunk_id: str
     node_id: str
-    regulation_id: str
+    node_type: NodeType
     text: str
+    citation_label: str
+    source_label: str
+    metadata: dict[str, str]
+    source_span: SourceSpan | None = None
+```
+
+```python
+@dataclass(slots=True, kw_only=True)
+class BM25Document:
+    document_id: str
+    node_id: str
+    node_type: NodeType
+    title: str
+    text: str
+    citation_label: str
+    source_label: str
     metadata: dict[str, str]
     source_span: SourceSpan | None = None
 ```
@@ -475,6 +492,8 @@ Recommended chunk levels:
 - article
 - clause
 - item
+- sub-item
+- appendix and table placeholders when they contain text
 
 Required vector metadata:
 

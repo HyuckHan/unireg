@@ -53,6 +53,11 @@ Completed:
   - deterministic citation labels
   - source file/page labels
   - citation serialization tests
+- Cross-university evaluation harness
+  - local `unireg-eval` corpus layout
+  - university-level PDF smoke evaluation
+  - source page coverage checks
+  - CSV report output
 
 ## Milestone 1: Section Parser
 
@@ -239,7 +244,82 @@ Tests:
 - citation serialization round-trip
 - empty parse result citation guard
 
-## Milestone 9: Search and RAG Preparation
+## Milestone 8.5: Cross-University Evaluation Harness
+
+Status: implemented.
+
+Goal:
+
+- Test parser robustness against external university regulation samples before
+  building search and RAG projections.
+
+Scope:
+
+- Evaluate PDFs under `unireg-eval/<university>/`.
+- Report university name, parser status, article/clause/item counts, citation
+  count, PDF page count, and structural source-page coverage.
+- Emit optional CSV reports.
+- Keep evaluation PDFs local and ignored by git.
+
+Tests:
+
+- page span coverage helpers
+- university folder name detection
+- threshold failure messages
+- page range formatting
+
+Usage:
+
+```bash
+.venv/bin/python scripts/check_eval_pdfs.py \
+  --eval-dir unireg-eval \
+  --report /tmp/unireg-eval-report.csv
+```
+
+Current external evaluation result:
+
+```text
+total=5 ok=5 failed=0
+```
+
+## Milestone 9: Metadata and Title Normalization
+
+Goal:
+
+- Normalize regulation metadata before search and RAG document generation.
+
+Motivation:
+
+- Cross-university evaluation showed that structure parsing is broadly stable,
+  but some PDFs merge regulation title, regulation code, amendment history, and
+  first chapter text into one noisy title.
+- Search/RAG documents should not inherit noisy metadata.
+
+Scope:
+
+- Split raw title candidates from normalized regulation title.
+- Extract institution name when it is available from filename, folder profile,
+  or document text.
+- Normalize regulation codes such as `[2-0-1]`.
+- Separate enactment/amendment metadata from regulation title when it appears
+  inline.
+- Preserve the original raw title text for traceability.
+- Add external evaluation checks that flag suspicious titles.
+
+Out of scope:
+
+- Corpus-level reference resolution.
+- Vector DB document generation.
+- Institution-specific parser plugins.
+
+Tests:
+
+- title normalization fixtures for current five external universities
+- noisy title regression for PDFs where first chapter text is attached
+- serialization preserves both raw and normalized metadata
+- evaluation script reports title warnings without failing structural parsing
+
+## Milestone 10: Search and RAG Preparation
 
 Goal:
 

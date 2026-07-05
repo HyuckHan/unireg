@@ -58,6 +58,30 @@ The full corpus pytest is opt-in so normal tests stay fast:
 UNIREG_RUN_PDF_CORPUS=1 .venv/bin/python -m pytest tests/test_pdf_corpus.py
 ```
 
+## External University Evaluation
+
+Put external university samples under one folder per university:
+
+```text
+unireg-eval/
+  university_a/
+    학칙.pdf
+  university_b/
+    학칙.pdf
+```
+
+Then run:
+
+```bash
+.venv/bin/python scripts/check_eval_pdfs.py \
+  --eval-dir unireg-eval \
+  --report /tmp/unireg-eval-report.csv
+```
+
+The evaluation checks parser success, hierarchy counts, citation counts, and
+whether parsed structure spans enough PDF pages to catch first-page-only
+failures.
+
 ## Export
 
 ```python

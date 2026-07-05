@@ -10,3 +10,5 @@ __pycache__/
 # Local PDF corpus for smoke/regression tests.
 examples/pdf/*.pdf
 examples/pdf/**/*.pdf
+unireg-eval/*.pdf
+unireg-eval/**/*.pdf

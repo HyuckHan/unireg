@@ -28,6 +28,10 @@ def article_id(parent_id: str, article_fragment: str) -> str:
     return f"{parent_id}/article:{_slugify(article_fragment)}"
 
 
+def clause_id(parent_id: str, clause_fragment: str) -> str:
+    return f"{parent_id}/clause:{_slugify(clause_fragment)}"
+
+
 def _slugify(value: str) -> str:
     value = value.strip().lower()
     value = _UNSAFE_ID_CHARS_RE.sub("-", value)

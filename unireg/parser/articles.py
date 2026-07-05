@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unireg.models import Article, CleanLine, merge_source_spans
+from unireg.models import Article, CleanLine
 from unireg.parser.ids import article_id
 from unireg.parser.patterns import ArticleHeading, parse_article_heading
 
@@ -34,10 +34,4 @@ class ArticleParser:
             chapter_title=chapter_title,
             section_title=section_title,
         )
-        if heading.body_text is not None:
-            article.body_lines.append(heading.body_text)
-            article.source_span = merge_source_spans(
-                article.source_span,
-                line.source_span,
-            )
         return article

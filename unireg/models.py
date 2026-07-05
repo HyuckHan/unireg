@@ -453,8 +453,8 @@ class Clause:
 class Article:
     """Article-level representation.
 
-    Clause parsing is intentionally not implemented yet, so Phase 1 article body
-    lines remain available until they are migrated into clauses.
+    Article body lines remain available for migration compatibility while
+    structured clause nodes are added by the parser.
     """
 
     id: str

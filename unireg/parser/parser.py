@@ -7,7 +7,9 @@ from pathlib import Path
 from unireg.cleaning import DocumentCleaner
 from unireg.loaders import PDFLoader
 from unireg.models import (
+    Article,
     Chapter,
+    Clause,
     CleanDocument,
     CleanLine,
     DiagnosticSeverity,
@@ -23,6 +25,7 @@ from unireg.models import (
 )
 from unireg.parser.articles import ArticleParser
 from unireg.parser.chapters import ChapterParser
+from unireg.parser.clauses import ClauseParser
 from unireg.parser.ids import chapter_id, regulation_id
 from unireg.parser.sections import SectionParser
 
@@ -38,12 +41,14 @@ class RegulationParser:
         chapter_parser: ChapterParser | None = None,
         section_parser: SectionParser | None = None,
         article_parser: ArticleParser | None = None,
+        clause_parser: ClauseParser | None = None,
     ) -> None:
         self._pdf_loader = pdf_loader or PDFLoader()
         self._cleaner = cleaner or DocumentCleaner()
         self._chapter_parser = chapter_parser or ChapterParser()
         self._section_parser = section_parser or SectionParser()
         self._article_parser = article_parser or ArticleParser()
+        self._clause_parser = clause_parser or ClauseParser()
 
     def parse_file(self, source_file: str | Path) -> ParseResult:
         """Parse a source file.
@@ -89,6 +94,7 @@ class RegulationParser:
         current_chapter = None
         current_section = None
         current_article = None
+        current_clause = None
         highest_chapter_number = 0
         parsed_line_count = 0
         unknown_line_count = 0
@@ -116,6 +122,7 @@ class RegulationParser:
                     regulation.chapters.append(current_chapter)
                     current_section = None
                     current_article = None
+                    current_clause = None
                     parsed_line_count += 1
                     continue
 
@@ -146,6 +153,7 @@ class RegulationParser:
                 )
                 current_chapter.sections.append(current_section)
                 current_article = None
+                current_clause = None
                 parsed_line_count += 1
                 continue
 
@@ -189,11 +197,22 @@ class RegulationParser:
                     current_section.articles.append(current_article)
                 else:
                     current_chapter.articles.append(current_article)
+                if article_heading.body_text is not None:
+                    current_clause = self._add_article_line(
+                        article=current_article,
+                        line=self._line_with_text(line, article_heading.body_text),
+                    )
+                else:
+                    current_clause = None
                 parsed_line_count += 1
                 continue
 
             if current_article is not None:
-                current_article.add_body_line(line)
+                current_clause = self._add_article_line(
+                    article=current_article,
+                    line=line,
+                    current_clause=current_clause,
+                )
                 parsed_line_count += 1
                 continue
 
@@ -271,3 +290,41 @@ class RegulationParser:
         if current_section is not None:
             return current_section.id, current_section.path
         return current_chapter.id, current_chapter.path
+
+    def _add_article_line(
+        self,
+        *,
+        article: Article,
+        line: CleanLine,
+        current_clause: Clause | None = None,
+    ) -> Clause | None:
+        article.add_body_line(line)
+
+        segments = self._clause_parser.split(line.text)
+        has_numbered_segment = any(
+            segment.clause_number is not None for segment in segments
+        )
+        if not has_numbered_segment and current_clause is not None:
+            self._clause_parser.append_to_clause(current_clause, line)
+            return current_clause
+
+        last_clause = current_clause
+        for segment in segments:
+            clause = self._clause_parser.create_clause(
+                article_id=article.id,
+                article_path=article.path,
+                line=line,
+                segment=segment,
+                clause_index=len(article.clauses) + 1,
+            )
+            article.clauses.append(clause)
+            last_clause = clause
+        return last_clause
+
+    @staticmethod
+    def _line_with_text(line: CleanLine, text: str) -> CleanLine:
+        return CleanLine(
+            text=text,
+            source_span=line.source_span,
+            line_number=line.line_number,
+        )

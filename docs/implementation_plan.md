@@ -23,6 +23,10 @@ Completed:
   - `제n절` heading detection
   - `Chapter -> Section -> Article` hierarchy
   - direct chapter articles still supported
+- Clause parser
+  - `①`, `②`, `③` clause marker detection
+  - unnumbered clause fallback
+  - article `body_lines` retained for migration compatibility
 
 ## Milestone 1: Section Parser
 
@@ -61,6 +65,8 @@ Completion criteria:
 - `ruff check` passes.
 
 ## Milestone 2: Clause Parser
+
+Status: implemented.
 
 Goal:
 

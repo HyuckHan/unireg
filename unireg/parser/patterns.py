@@ -26,6 +26,36 @@ class ArticleHeading:
     body_text: str | None
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ClauseSegment:
+    clause_number: str | None
+    text: str
+    raw_text: str
+
+
+_CLAUSE_MARKERS = {
+    "①": "1",
+    "②": "2",
+    "③": "3",
+    "④": "4",
+    "⑤": "5",
+    "⑥": "6",
+    "⑦": "7",
+    "⑧": "8",
+    "⑨": "9",
+    "⑩": "10",
+    "⑪": "11",
+    "⑫": "12",
+    "⑬": "13",
+    "⑭": "14",
+    "⑮": "15",
+    "⑯": "16",
+    "⑰": "17",
+    "⑱": "18",
+    "⑲": "19",
+    "⑳": "20",
+}
+_CLAUSE_MARKER_RE = re.compile(f"[{''.join(_CLAUSE_MARKERS)}]")
 _CHAPTER_RE = re.compile(r"^제\s*(?P<number>\d+)\s*장\s*(?P<title>.*)$")
 _SECTION_RE = re.compile(r"^제\s*(?P<number>\d+)\s*절\s*(?P<title>.*)$")
 _ARTICLE_RE = re.compile(
@@ -76,6 +106,44 @@ def parse_article_heading(text: str) -> ArticleHeading | None:
         title=title,
         body_text=body_text,
     )
+
+
+def parse_clause_segments(text: str) -> list[ClauseSegment]:
+    matches = list(_CLAUSE_MARKER_RE.finditer(text))
+    if not matches:
+        stripped = text.strip()
+        return (
+            [ClauseSegment(clause_number=None, text=stripped, raw_text=stripped)]
+            if stripped
+            else []
+        )
+
+    segments: list[ClauseSegment] = []
+    first_match = matches[0]
+    prefix = text[: first_match.start()].strip()
+    if prefix:
+        segments.append(
+            ClauseSegment(clause_number=None, text=prefix, raw_text=prefix)
+        )
+
+    for index, match in enumerate(matches):
+        next_start = (
+            matches[index + 1].start()
+            if index + 1 < len(matches)
+            else len(text)
+        )
+        raw_text = text[match.start() : next_start].strip()
+        marker = match.group(0)
+        body = raw_text[len(marker) :].strip()
+        segments.append(
+            ClauseSegment(
+                clause_number=_CLAUSE_MARKERS[marker],
+                text=body,
+                raw_text=raw_text,
+            )
+        )
+
+    return segments
 
 
 def _empty_to_none(value: str | None) -> str | None:

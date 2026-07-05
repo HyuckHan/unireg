@@ -44,11 +44,18 @@ def test_parser_builds_chapter_and_article_hierarchy() -> None:
     assert first_chapter.articles[0].body_lines == [
         "이 학칙은 테스트를 목적으로 한다."
     ]
-    assert first_chapter.articles[0].clauses == []
+    assert first_chapter.articles[0].clauses[0].clause_number is None
+    assert first_chapter.articles[0].clauses[0].text == (
+        "이 학칙은 테스트를 목적으로 한다."
+    )
     assert first_chapter.articles[1].title == "정의"
     assert first_chapter.articles[1].body_lines == [
         "이 학칙에서 사용하는 용어는 다음과 같다.",
         "① 이 줄은 아직 clause로 파싱하지 않는다.",
+    ]
+    assert [clause.clause_number for clause in first_chapter.articles[1].clauses] == [
+        None,
+        "1",
     ]
 
     second_chapter = regulation.chapters[1]
@@ -73,6 +80,45 @@ def test_parser_preserves_inserted_article_number() -> None:
     assert article.article_number == "제1조의2"
     assert article.path == ["chapter:1", "article:1-2"]
     assert article.id.endswith("/article:1-2")
+
+
+def test_parser_builds_clause_hierarchy() -> None:
+    text = """
+테스트 규정
+제1장 총칙
+제1조(목적) ① 첫째 항이다.② 둘째 항이다.
+둘째 항의 이어지는 문장이다.
+제2조(정의)
+번호 없는 본문이다.
+"""
+
+    result = RegulationParser().parse_text(text, source_file="clause.txt")
+
+    assert result.document is not None
+    articles = result.document.regulation.chapters[0].articles
+    first_article = articles[0]
+    assert first_article.body_lines == [
+        "① 첫째 항이다.② 둘째 항이다.",
+        "둘째 항의 이어지는 문장이다.",
+    ]
+    assert [clause.clause_number for clause in first_article.clauses] == ["1", "2"]
+    assert first_article.clauses[0].text == "첫째 항이다."
+    assert first_article.clauses[0].raw_text == "① 첫째 항이다."
+    assert first_article.clauses[0].path == ["chapter:1", "article:1", "clause:1"]
+    assert first_article.clauses[1].text == (
+        "둘째 항이다.\n둘째 항의 이어지는 문장이다."
+    )
+    assert first_article.clauses[1].id.endswith("/clause:2")
+
+    second_article = articles[1]
+    assert len(second_article.clauses) == 1
+    assert second_article.clauses[0].clause_number is None
+    assert second_article.clauses[0].path == [
+        "chapter:1",
+        "article:2",
+        "clause:unnumbered",
+    ]
+    assert second_article.clauses[0].text == "번호 없는 본문이다."
 
 
 def test_parser_builds_section_hierarchy() -> None:
@@ -112,6 +158,7 @@ def test_parser_builds_section_hierarchy() -> None:
     ]
     assert first_section.articles[0].id.endswith("/section:1/article:2")
     assert first_section.articles[0].body_lines == ["섹션 조문 본문"]
+    assert first_section.articles[0].clauses[0].clause_number is None
 
     second_section = chapter.sections[1]
     assert second_section.title == "정의"
@@ -175,7 +222,8 @@ def test_parser_serializes_to_dict() -> None:
     assert first_chapter["node_type"] == "chapter"
     assert first_chapter["sections"] == []
     assert first_article["node_type"] == "article"
-    assert first_article["clauses"] == []
+    assert first_article["clauses"][0]["node_type"] == "clause"
+    assert first_article["clauses"][0]["clause_number"] is None
 
 
 def test_parser_handles_real_pdf_extraction() -> None:
@@ -196,6 +244,7 @@ def test_parser_handles_real_pdf_extraction() -> None:
     assert first_chapter.articles[0].title == "교육목적"
     assert first_chapter.articles[0].source_span is not None
     assert first_chapter.articles[0].source_span.page_start == 1
+    assert first_chapter.articles[0].clauses[0].clause_number is None
 
     chapter_24 = regulation.chapters[23]
     assert chapter_24.number == "24"

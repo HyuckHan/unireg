@@ -50,6 +50,22 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         source_span=span,
         sub_items=[sub_item],
     )
+    clause_reference = Reference(
+        id="ref:clause:1",
+        source_node_id="reg/chapter:1/section:1/article:1/clause:1",
+        reference_type=ReferenceType.IMPLICIT_REFERENCE,
+        status=ReferenceStatus.UNRESOLVED,
+        raw_text="세부사항은 따로 정한다.",
+        confidence=0.85,
+        source_span=span,
+    )
+    clause_flag = IncompletenessFlag(
+        id="flag:clause:1",
+        node_id="reg/chapter:1/section:1/article:1/clause:1",
+        flag_type=IncompletenessType.REQUIRES_MISSING_REGULATION,
+        raw_text="세부사항은 따로 정한다.",
+        source_span=span,
+    )
     clause = Clause(
         id="reg/chapter:1/section:1/article:1/clause:1",
         clause_number="1",
@@ -57,6 +73,8 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         text="첫 번째 항",
         source_span=span,
         items=[item],
+        references=[clause_reference],
+        incompleteness_flags=[clause_flag],
     )
     reference = Reference(
         id="ref:1",
@@ -164,6 +182,15 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
     )
     assert restored.regulation.references[0].status == ReferenceStatus.MISSING
     assert restored.regulation.appendices[0].tables[0].caption == "별표 1"
+    assert (
+        restored.regulation.chapters[0]
+        .sections[0]
+        .articles[0]
+        .clauses[0]
+        .incompleteness_flags[0]
+        .flag_type
+        == IncompletenessType.REQUIRES_MISSING_REGULATION
+    )
 
 
 def test_chapter_all_articles_includes_section_articles() -> None:

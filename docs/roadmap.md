@@ -43,6 +43,8 @@
   - Repealed provisions
   - Newly inserted provisions
   - Effective dates
+  - Reference detection
+  - Incompleteness flagging
 - Parser validation
   - Hierarchy preservation tests
   - Source metadata tests
@@ -50,12 +52,11 @@
 
 ## Phase 2
 
-- Reference detection
-  - Explicit references
-  - Missing internal rules
-  - Administrative discretion
-  - Unknown external rules
-- Incompleteness handling
+- Reference resolution
+  - Corpus-level reference matching
+  - Missing internal rule confirmation
+  - Unknown external rule classification
+- Answerability handling
   - Answerability status model
   - Missing-source preservation
   - Graph edge preparation

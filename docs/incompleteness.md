@@ -28,3 +28,28 @@ Reference types:
 - UNKNOWN_EXTERNAL_RULE
 - MISSING_INTERNAL_RULE
 - ADMINISTRATIVE_DISCRETION
+
+## Current Parser Support
+
+The parser now preserves deterministic reference metadata for these patterns:
+
+- `세부사항은 따로 정한다`
+  - `ReferenceType.IMPLICIT_REFERENCE`
+  - `ReferenceStatus.UNRESOLVED`
+  - `IncompletenessType.REQUIRES_MISSING_REGULATION`
+- `총장이 따로 정한다`
+  - `ReferenceType.ADMINISTRATIVE_DISCRETION`
+  - `ReferenceStatus.UNRESOLVED`
+  - `IncompletenessType.ADMINISTRATIVE_DISCRETION`
+- `별도 규정에 따른다`
+  - `ReferenceType.MISSING_INTERNAL_RULE`
+  - `ReferenceStatus.MISSING`
+  - missing source: `별도 규정`
+- `시행세칙에 따른다`
+  - `ReferenceType.MISSING_INTERNAL_RULE`
+  - `ReferenceStatus.MISSING`
+  - missing source: `시행세칙`
+
+This is detection, not corpus-level resolution. If the referenced document is
+present elsewhere in the corpus, a later resolution phase should connect the
+reference to the target node without deleting the original unresolved evidence.

@@ -32,6 +32,7 @@ from unireg.parser.chapters import ChapterParser
 from unireg.parser.clauses import ClauseParser
 from unireg.parser.ids import chapter_id, regulation_id
 from unireg.parser.patterns import AppendixHeading
+from unireg.parser.references import ReferenceIncompletenessEnricher
 from unireg.parser.sections import SectionParser
 from unireg.parser.tables import TableParser
 
@@ -51,6 +52,7 @@ class RegulationParser:
         appendix_parser: AppendixParser | None = None,
         table_parser: TableParser | None = None,
         amendment_enricher: AmendmentStatusEnricher | None = None,
+        reference_enricher: ReferenceIncompletenessEnricher | None = None,
     ) -> None:
         self._pdf_loader = pdf_loader or PDFLoader()
         self._cleaner = cleaner or DocumentCleaner()
@@ -61,6 +63,9 @@ class RegulationParser:
         self._appendix_parser = appendix_parser or AppendixParser()
         self._table_parser = table_parser or TableParser()
         self._amendment_enricher = amendment_enricher or AmendmentStatusEnricher()
+        self._reference_enricher = (
+            reference_enricher or ReferenceIncompletenessEnricher()
+        )
 
     def parse_file(self, source_file: str | Path) -> ParseResult:
         """Parse a source file.
@@ -285,6 +290,7 @@ class RegulationParser:
             unknown_line_count += 1
 
         self._amendment_enricher.enrich(regulation)
+        self._reference_enricher.enrich(regulation)
         article_count = len(regulation.all_articles())
         stats = ParseStats(
             line_count=len(document.lines),

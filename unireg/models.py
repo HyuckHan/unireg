@@ -319,6 +319,7 @@ class SubItem:
     status: ProvisionStatus = ProvisionStatus.ACTIVE
     raw_text: str | None = None
     references: list[Reference] = field(default_factory=list)
+    incompleteness_flags: list[IncompletenessFlag] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -332,6 +333,9 @@ class SubItem:
             "status": self.status.value,
             "raw_text": self.raw_text,
             "references": [reference.to_dict() for reference in self.references],
+            "incompleteness_flags": [
+                flag.to_dict() for flag in self.incompleteness_flags
+            ],
         }
 
     @classmethod
@@ -347,6 +351,10 @@ class SubItem:
             raw_text=_optional_str(data, "raw_text"),
             references=[
                 Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+            incompleteness_flags=[
+                IncompletenessFlag.from_dict(item)
+                for item in _dict_list(data, "incompleteness_flags")
             ],
         )
 
@@ -365,6 +373,7 @@ class Item:
     raw_text: str | None = None
     sub_items: list[SubItem] = field(default_factory=list)
     references: list[Reference] = field(default_factory=list)
+    incompleteness_flags: list[IncompletenessFlag] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -379,6 +388,9 @@ class Item:
             "raw_text": self.raw_text,
             "sub_items": [sub_item.to_dict() for sub_item in self.sub_items],
             "references": [reference.to_dict() for reference in self.references],
+            "incompleteness_flags": [
+                flag.to_dict() for flag in self.incompleteness_flags
+            ],
         }
 
     @classmethod
@@ -398,6 +410,10 @@ class Item:
             references=[
                 Reference.from_dict(item) for item in _dict_list(data, "references")
             ],
+            incompleteness_flags=[
+                IncompletenessFlag.from_dict(item)
+                for item in _dict_list(data, "incompleteness_flags")
+            ],
         )
 
 
@@ -415,6 +431,7 @@ class Clause:
     raw_text: str | None = None
     items: list[Item] = field(default_factory=list)
     references: list[Reference] = field(default_factory=list)
+    incompleteness_flags: list[IncompletenessFlag] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -429,6 +446,9 @@ class Clause:
             "raw_text": self.raw_text,
             "items": [item.to_dict() for item in self.items],
             "references": [reference.to_dict() for reference in self.references],
+            "incompleteness_flags": [
+                flag.to_dict() for flag in self.incompleteness_flags
+            ],
         }
 
     @classmethod
@@ -445,6 +465,10 @@ class Clause:
             items=[Item.from_dict(item) for item in _dict_list(data, "items")],
             references=[
                 Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+            incompleteness_flags=[
+                IncompletenessFlag.from_dict(item)
+                for item in _dict_list(data, "incompleteness_flags")
             ],
         )
 

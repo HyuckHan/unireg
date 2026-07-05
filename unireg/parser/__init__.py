@@ -5,6 +5,7 @@ from unireg.parser.appendices import AppendixParser
 from unireg.parser.clauses import ClauseParser
 from unireg.parser.items import ItemParser
 from unireg.parser.parser import RegulationParser
+from unireg.parser.references import ReferenceIncompletenessEnricher
 from unireg.parser.sections import SectionParser
 from unireg.parser.tables import TableParser
 
@@ -13,6 +14,7 @@ __all__ = [
     "AppendixParser",
     "ClauseParser",
     "ItemParser",
+    "ReferenceIncompletenessEnricher",
     "RegulationParser",
     "SectionParser",
     "TableParser",

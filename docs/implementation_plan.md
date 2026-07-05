@@ -39,6 +39,11 @@ Completed:
   - `부칙`, `[별표 n]`, and `【서식 제n호】` detection
   - appendix-level raw text preservation
   - table placeholder nodes for annex table content
+- Reference and incompleteness detection
+  - unresolved implicit references
+  - missing internal regulation references
+  - administrative-discretion references
+  - node-level incompleteness flags
 
 ## Milestone 1: Section Parser
 
@@ -159,6 +164,8 @@ Tests:
 
 ## Milestone 6: Reference and Incompleteness Detection
 
+Status: implemented.
+
 Goal:
 
 - Preserve unresolved and missing references for grounded QA.
@@ -171,6 +178,14 @@ Scope:
 - `시행세칙에 따른다`
 - `Reference`
 - `IncompletenessFlag`
+
+Tests:
+
+- reference pattern detection
+- missing regulation and unresolved-reference status mapping
+- administrative-discretion flagging
+- item/sub-item reference attachment
+- parser output serialization with reference metadata
 
 ## Milestone 7: Exporters
 

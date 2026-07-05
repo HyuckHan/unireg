@@ -48,6 +48,16 @@ def table_id(parent_id: str, table_fragment: str) -> str:
     return f"{parent_id}/table:{_slugify(table_fragment)}"
 
 
+def reference_id(source_node_id: str, index: int, raw_text: str) -> str:
+    digest = hashlib.sha1(raw_text.encode()).hexdigest()[:8]
+    return f"{source_node_id}/reference:{index}-{digest}"
+
+
+def incompleteness_flag_id(source_node_id: str, index: int, raw_text: str) -> str:
+    digest = hashlib.sha1(raw_text.encode()).hexdigest()[:8]
+    return f"{source_node_id}/incompleteness:{index}-{digest}"
+
+
 def _slugify(value: str) -> str:
     value = value.strip().lower()
     value = _UNSAFE_ID_CHARS_RE.sub("-", value)

@@ -18,11 +18,13 @@ from unireg.models import (
     ParseStats,
     Regulation,
     RegulationDocument,
+    Section,
     merge_source_spans,
 )
 from unireg.parser.articles import ArticleParser
 from unireg.parser.chapters import ChapterParser
 from unireg.parser.ids import chapter_id, regulation_id
+from unireg.parser.sections import SectionParser
 
 
 class RegulationParser:
@@ -34,11 +36,13 @@ class RegulationParser:
         pdf_loader: PDFLoader | None = None,
         cleaner: DocumentCleaner | None = None,
         chapter_parser: ChapterParser | None = None,
+        section_parser: SectionParser | None = None,
         article_parser: ArticleParser | None = None,
     ) -> None:
         self._pdf_loader = pdf_loader or PDFLoader()
         self._cleaner = cleaner or DocumentCleaner()
         self._chapter_parser = chapter_parser or ChapterParser()
+        self._section_parser = section_parser or SectionParser()
         self._article_parser = article_parser or ArticleParser()
 
     def parse_file(self, source_file: str | Path) -> ParseResult:
@@ -83,6 +87,7 @@ class RegulationParser:
         )
 
         current_chapter = None
+        current_section = None
         current_article = None
         highest_chapter_number = 0
         parsed_line_count = 0
@@ -109,9 +114,40 @@ class RegulationParser:
                         heading=chapter_heading,
                     )
                     regulation.chapters.append(current_chapter)
+                    current_section = None
                     current_article = None
                     parsed_line_count += 1
                     continue
+
+            section_heading = self._section_parser.match(line)
+            if section_heading is not None:
+                if current_chapter is None:
+                    current_chapter = self._create_implicit_chapter(
+                        regulation_id=regulation.id,
+                        line=line,
+                    )
+                    regulation.chapters.append(current_chapter)
+                    diagnostics.append(
+                        ParseDiagnostic(
+                            severity=DiagnosticSeverity.WARNING,
+                            code="section_before_chapter",
+                            message="Section appeared before any chapter; "
+                            "attached it to an implicit chapter.",
+                            source_span=line.source_span,
+                            line_text=line.text,
+                        )
+                    )
+
+                current_section = self._section_parser.create_section(
+                    chapter_id=current_chapter.id,
+                    chapter_path=current_chapter.path,
+                    line=line,
+                    heading=section_heading,
+                )
+                current_chapter.sections.append(current_section)
+                current_article = None
+                parsed_line_count += 1
+                continue
 
             article_heading = self._article_parser.match(line)
             if article_heading is not None:
@@ -132,20 +168,37 @@ class RegulationParser:
                         )
                     )
 
+                parent_id, parent_path = self._article_parent(
+                    current_chapter=current_chapter,
+                    current_section=current_section,
+                )
                 current_article = self._article_parser.create_article(
-                    chapter_id=current_chapter.id,
-                    chapter_path=current_chapter.path,
+                    parent_id=parent_id,
+                    parent_path=parent_path,
                     regulation_title=regulation.title,
                     chapter_title=current_chapter.title,
+                    section_title=(
+                        current_section.title
+                        if current_section is not None
+                        else None
+                    ),
                     line=line,
                     heading=article_heading,
                 )
-                current_chapter.articles.append(current_article)
+                if current_section is not None:
+                    current_section.articles.append(current_article)
+                else:
+                    current_chapter.articles.append(current_article)
                 parsed_line_count += 1
                 continue
 
             if current_article is not None:
                 current_article.add_body_line(line)
+                parsed_line_count += 1
+                continue
+
+            if current_section is not None:
+                current_section.add_intro_line(line)
                 parsed_line_count += 1
                 continue
 
@@ -186,6 +239,8 @@ class RegulationParser:
         for line in lines:
             if self._chapter_parser.match(line) is not None:
                 return None
+            if self._section_parser.match(line) is not None:
+                return None
             if self._article_parser.match(line) is not None:
                 return None
             if line.text:
@@ -206,3 +261,13 @@ class RegulationParser:
             path=["chapter:implicit"],
             source_span=line.source_span,
         )
+
+    @staticmethod
+    def _article_parent(
+        *,
+        current_chapter: Chapter,
+        current_section: Section | None,
+    ) -> tuple[str, list[str]]:
+        if current_section is not None:
+            return current_section.id, current_section.path
+        return current_chapter.id, current_chapter.path

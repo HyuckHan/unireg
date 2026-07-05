@@ -16,8 +16,8 @@ class ArticleParser:
     def create_article(
         self,
         *,
-        chapter_id: str,
-        chapter_path: list[str],
+        parent_id: str,
+        parent_path: list[str],
         regulation_title: str | None = None,
         chapter_title: str | None = None,
         section_title: str | None = None,
@@ -25,10 +25,10 @@ class ArticleParser:
         heading: ArticleHeading,
     ) -> Article:
         article = Article(
-            id=article_id(chapter_id, heading.id_fragment),
+            id=article_id(parent_id, heading.id_fragment),
             article_number=heading.article_number,
             title=heading.title,
-            path=[*chapter_path, f"article:{heading.id_fragment}"],
+            path=[*parent_path, f"article:{heading.id_fragment}"],
             source_span=line.source_span,
             regulation_title=regulation_title,
             chapter_title=chapter_title,

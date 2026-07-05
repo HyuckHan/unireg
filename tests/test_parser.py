@@ -75,6 +75,68 @@ def test_parser_preserves_inserted_article_number() -> None:
     assert article.id.endswith("/article:1-2")
 
 
+def test_parser_builds_section_hierarchy() -> None:
+    text = """
+테스트 규정
+제1장 총칙
+제1조(직접조문)
+직접 조문 본문
+제1절 통칙
+절 머리말
+제2조(목적)
+섹션 조문 본문
+제2절 정의
+제3조(정의)
+정의 조문 본문
+"""
+
+    result = RegulationParser().parse_text(text, source_file="section.txt")
+
+    assert result.document is not None
+    regulation = result.document.regulation
+    chapter = regulation.chapters[0]
+    assert result.stats.article_count == 3
+    assert [article.article_number for article in chapter.articles] == ["제1조"]
+    assert [section.number for section in chapter.sections] == ["1", "2"]
+
+    first_section = chapter.sections[0]
+    assert first_section.title == "통칙"
+    assert first_section.intro_lines == ["절 머리말"]
+    assert first_section.articles[0].article_number == "제2조"
+    assert first_section.articles[0].section_title == "통칙"
+    assert first_section.articles[0].chapter_title == "총칙"
+    assert first_section.articles[0].path == [
+        "chapter:1",
+        "section:1",
+        "article:2",
+    ]
+    assert first_section.articles[0].id.endswith("/section:1/article:2")
+    assert first_section.articles[0].body_lines == ["섹션 조문 본문"]
+
+    second_section = chapter.sections[1]
+    assert second_section.title == "정의"
+    assert second_section.articles[0].article_number == "제3조"
+
+
+def test_parser_warns_and_creates_implicit_chapter_for_section_before_chapter() -> None:
+    text = """
+장 없는 규정
+제1절 통칙
+제1조(목적)
+본문
+"""
+
+    result = RegulationParser().parse_text(text, source_file="no-chapter-section.txt")
+
+    assert result.document is not None
+    regulation = result.document.regulation
+    assert regulation.chapters[0].number == "implicit"
+    assert regulation.chapters[0].sections[0].number == "1"
+    assert regulation.chapters[0].sections[0].articles[0].article_number == "제1조"
+    assert result.diagnostics[0].severity == DiagnosticSeverity.WARNING
+    assert result.diagnostics[0].code == "section_before_chapter"
+
+
 def test_parser_warns_and_creates_implicit_chapter_for_article_before_chapter() -> None:
     text = """
 장 없는 규정

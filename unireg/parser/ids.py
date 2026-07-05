@@ -20,6 +20,10 @@ def chapter_id(parent_id: str, number: str) -> str:
     return f"{parent_id}/chapter:{_slugify(number)}"
 
 
+def section_id(parent_id: str, number: str) -> str:
+    return f"{parent_id}/section:{_slugify(number)}"
+
+
 def article_id(parent_id: str, article_fragment: str) -> str:
     return f"{parent_id}/article:{_slugify(article_fragment)}"
 

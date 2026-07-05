@@ -43,6 +43,7 @@ def test_cleaner_strips_pdf_header_and_splits_structural_markers() -> None:
                 text=(
                     "학칙 2-1-1~22 부설연구소 내용"
                     "제4장 수업연한과 재학연한"
+                    "제1절 통칙"
                     "제6조(수업연한과 재학연한) 본문"
                 ),
             )
@@ -54,6 +55,7 @@ def test_cleaner_strips_pdf_header_and_splits_structural_markers() -> None:
     assert [line.text for line in clean_document.lines] == [
         "2 부설연구소 내용",
         "제4장 수업연한과 재학연한",
+        "제1절 통칙",
         "제6조(수업연한과 재학연한) 본문",
     ]
     assert {line.source_span.page_start for line in clean_document.lines} == {2}

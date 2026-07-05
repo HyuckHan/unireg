@@ -12,7 +12,7 @@ _PAGE_HEADER_TEMPLATE = (
     r"^[가-힣A-Za-z][가-힣A-Za-z\s]{{0,20}}\s+\d+(?:-\d+)+~{page_number}"
 )
 _STRUCTURAL_MARKER_RE = re.compile(
-    r"(?=제\s*\d+\s*장\b|제\s*\d+\s*조(?:\s*의\s*\d+)?\s*\()"
+    r"(?=제\s*\d+\s*장\b|제\s*\d+\s*절\b|제\s*\d+\s*조(?:\s*의\s*\d+)?\s*\()"
 )
 
 

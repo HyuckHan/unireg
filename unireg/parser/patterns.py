@@ -13,6 +13,12 @@ class ChapterHeading:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class SectionHeading:
+    number: str
+    title: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleHeading:
     article_number: str
     id_fragment: str
@@ -21,6 +27,7 @@ class ArticleHeading:
 
 
 _CHAPTER_RE = re.compile(r"^제\s*(?P<number>\d+)\s*장\s*(?P<title>.*)$")
+_SECTION_RE = re.compile(r"^제\s*(?P<number>\d+)\s*절\s*(?P<title>.*)$")
 _ARTICLE_RE = re.compile(
     r"^제\s*(?P<base>\d+)\s*조"
     r"(?:\s*의\s*(?P<sub>\d+))?"
@@ -36,6 +43,15 @@ def parse_chapter_heading(text: str) -> ChapterHeading | None:
 
     title = _empty_to_none(match.group("title"))
     return ChapterHeading(number=match.group("number"), title=title)
+
+
+def parse_section_heading(text: str) -> SectionHeading | None:
+    match = _SECTION_RE.match(text)
+    if match is None:
+        return None
+
+    title = _empty_to_none(match.group("title"))
+    return SectionHeading(number=match.group("number"), title=title)
 
 
 def parse_article_heading(text: str) -> ArticleHeading | None:

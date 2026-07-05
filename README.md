@@ -34,3 +34,26 @@ Its primary goal is to transform university regulations (PDF/HWP) into structure
 LLM should never invent regulations.
 
 Every answer must be grounded by the original regulation.
+
+## PDF Corpus Smoke Test
+
+Copy regulation PDFs into `examples/pdf`, then run:
+
+```bash
+.venv/bin/python scripts/check_pdfs.py --pdf-dir examples/pdf
+```
+
+To save a CSV report:
+
+```bash
+.venv/bin/python scripts/check_pdfs.py \
+  --pdf-dir examples/pdf \
+  --report /tmp/unireg-pdf-report.csv \
+  --quiet
+```
+
+The full corpus pytest is opt-in so normal tests stay fast:
+
+```bash
+UNIREG_RUN_PDF_CORPUS=1 .venv/bin/python -m pytest tests/test_pdf_corpus.py
+```

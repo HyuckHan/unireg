@@ -154,11 +154,14 @@ def _event_type(raw_text: str) -> AmendmentEventType:
 def _extract_dates(text: str) -> list[date]:
     dates: list[date] = []
     for match in _DATE_RE.finditer(text):
-        dates.append(
-            date(
-                int(match.group("year")),
-                int(match.group("month")),
-                int(match.group("day")),
+        try:
+            dates.append(
+                date(
+                    int(match.group("year")),
+                    int(match.group("month")),
+                    int(match.group("day")),
+                )
             )
-        )
+        except ValueError:
+            continue
     return dates

@@ -27,6 +27,9 @@ include = ["unireg*"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+markers = [
+    "corpus: opt-in tests that parse every PDF under examples/pdf",
+]
 
 [tool.ruff]
 line-length = 88

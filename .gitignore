@@ -6,3 +6,7 @@ __pycache__/
 *.egg-info/
 .DS_Store
 *.swp
+
+# Local PDF corpus for smoke/regression tests.
+examples/pdf/*.pdf
+examples/pdf/**/*.pdf

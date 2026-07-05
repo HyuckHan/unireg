@@ -48,6 +48,23 @@ def test_parser_enriches_article_amendment_history() -> None:
     assert articles[1].amendment_history[0].date == date(2025, 1, 2)
 
 
+def test_parser_ignores_invalid_amendment_dates_without_failing() -> None:
+    text = """
+테스트 규정
+제1장 총칙
+제1조(목적)
+본문 <일부개정 2019.00.00.>
+"""
+
+    result = RegulationParser().parse_text(text, source_file="invalid-date.txt")
+
+    assert result.document is not None
+    article = result.document.regulation.chapters[0].articles[0]
+    assert article.amendment_history[0].event_type == AmendmentEventType.AMENDED
+    assert article.amendment_history[0].date is None
+    assert article.amendment_history[0].raw_text == "<일부개정 2019.00.00.>"
+
+
 def test_parser_enriches_deleted_and_repealed_article_status() -> None:
     text = """
 테스트 규정

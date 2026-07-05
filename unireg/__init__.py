@@ -1,6 +1,7 @@
 """UniReg regulation parser."""
 
 from unireg.cleaning import DocumentCleaner
+from unireg.exporters import JSONExporter, MarkdownExporter
 from unireg.loaders import PDFLoader
 from unireg.models import (
     AmendmentEvent,
@@ -37,6 +38,8 @@ __all__ = [
     "IncompletenessFlag",
     "IncompletenessType",
     "Item",
+    "JSONExporter",
+    "MarkdownExporter",
     "NodeType",
     "PDFLoader",
     "ProvisionStatus",

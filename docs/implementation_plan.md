@@ -44,6 +44,10 @@ Completed:
   - missing internal regulation references
   - administrative-discretion references
   - node-level incompleteness flags
+- Exporters
+  - versioned JSON export
+  - Markdown hierarchy export
+  - exporter snapshot tests
 
 ## Milestone 1: Section Parser
 
@@ -189,6 +193,8 @@ Tests:
 
 ## Milestone 7: Exporters
 
+Status: implemented.
+
 Goal:
 
 - Provide stable Markdown and JSON outputs.
@@ -198,6 +204,13 @@ Scope:
 - versioned JSON contract
 - Markdown hierarchy export
 - snapshot tests
+
+Tests:
+
+- JSON exporter versioned payload snapshot
+- JSON exporter round-trip load
+- Markdown hierarchy snapshot
+- empty parse result export guard
 
 ## Milestone 8: Citation Layer
 

@@ -49,6 +49,10 @@
   - Hierarchy preservation tests
   - Source metadata tests
   - Malformed input tests
+- Exporters
+  - Markdown hierarchy export
+  - JSON export
+  - Round-trip/snapshot tests
 
 ## Phase 2
 
@@ -63,10 +67,9 @@
 
 ## Phase 3
 
-- Markdown export
-- JSON export
-- JSON schema or versioned export contract
-- Round-trip/snapshot tests
+- JSON schema publication
+- Export compatibility tests across schema versions
+- CLI export commands
 
 ## Phase 4
 

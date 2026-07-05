@@ -57,3 +57,17 @@ The full corpus pytest is opt-in so normal tests stay fast:
 ```bash
 UNIREG_RUN_PDF_CORPUS=1 .venv/bin/python -m pytest tests/test_pdf_corpus.py
 ```
+
+## Export
+
+```python
+from unireg.exporters import JSONExporter, MarkdownExporter
+from unireg.parser import RegulationParser
+
+result = RegulationParser().parse_file("examples/pdf/sample.pdf")
+if result.document is None:
+    raise RuntimeError("No document parsed")
+
+JSONExporter().dump(result.document, "out/regulation.json")
+MarkdownExporter().dump(result.document, "out/regulation.md")
+```

@@ -18,6 +18,9 @@ class ArticleParser:
         *,
         chapter_id: str,
         chapter_path: list[str],
+        regulation_title: str | None = None,
+        chapter_title: str | None = None,
+        section_title: str | None = None,
         line: CleanLine,
         heading: ArticleHeading,
     ) -> Article:
@@ -27,6 +30,9 @@ class ArticleParser:
             title=heading.title,
             path=[*chapter_path, f"article:{heading.id_fragment}"],
             source_span=line.source_span,
+            regulation_title=regulation_title,
+            chapter_title=chapter_title,
+            section_title=section_title,
         )
         if heading.body_text is not None:
             article.body_lines.append(heading.body_text)

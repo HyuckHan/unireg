@@ -135,6 +135,8 @@ class RegulationParser:
                 current_article = self._article_parser.create_article(
                     chapter_id=current_chapter.id,
                     chapter_path=current_chapter.path,
+                    regulation_title=regulation.title,
+                    chapter_title=current_chapter.title,
                     line=line,
                     heading=article_heading,
                 )
@@ -165,7 +167,7 @@ class RegulationParser:
             )
             unknown_line_count += 1
 
-        article_count = sum(len(chapter.articles) for chapter in regulation.chapters)
+        article_count = len(regulation.all_articles())
         stats = ParseStats(
             line_count=len(document.lines),
             parsed_line_count=parsed_line_count,

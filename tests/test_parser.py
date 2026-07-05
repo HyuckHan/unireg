@@ -38,9 +38,13 @@ def test_parser_builds_chapter_and_article_hierarchy() -> None:
         "제2조",
     ]
     assert first_chapter.articles[0].title == "목적"
+    assert first_chapter.articles[0].regulation_title == "테스트 학칙"
+    assert first_chapter.articles[0].chapter_title == "총칙"
+    assert first_chapter.sections == []
     assert first_chapter.articles[0].body_lines == [
         "이 학칙은 테스트를 목적으로 한다."
     ]
+    assert first_chapter.articles[0].clauses == []
     assert first_chapter.articles[1].title == "정의"
     assert first_chapter.articles[1].body_lines == [
         "이 학칙에서 사용하는 용어는 다음과 같다.",
@@ -103,6 +107,13 @@ def test_parser_serializes_to_dict() -> None:
 
     assert payload["document"] is not None
     assert payload["stats"]["article_count"] == 1
+    regulation = payload["document"]["regulation"]
+    first_chapter = regulation["chapters"][0]
+    first_article = first_chapter["articles"][0]
+    assert first_chapter["node_type"] == "chapter"
+    assert first_chapter["sections"] == []
+    assert first_article["node_type"] == "article"
+    assert first_article["clauses"] == []
 
 
 def test_parser_handles_real_pdf_extraction() -> None:

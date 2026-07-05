@@ -1,11 +1,73 @@
-"""Core dataclasses for Phase 1 parsing."""
+"""Core dataclasses for parsed regulation documents."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from enum import StrEnum
+from typing import cast
 
 SCHEMA_VERSION = "unireg.regulation.v1"
+
+
+class NodeType(StrEnum):
+    """Type of a legal hierarchy node."""
+
+    REGULATION = "regulation"
+    CHAPTER = "chapter"
+    SECTION = "section"
+    ARTICLE = "article"
+    CLAUSE = "clause"
+    ITEM = "item"
+    SUB_ITEM = "sub_item"
+    APPENDIX = "appendix"
+    TABLE = "table"
+
+
+class ProvisionStatus(StrEnum):
+    """Legal status of a provision."""
+
+    ACTIVE = "active"
+    REPEALED = "repealed"
+    DELETED = "deleted"
+    UNKNOWN = "unknown"
+
+
+class AmendmentEventType(StrEnum):
+    """Kind of amendment event detected in source text."""
+
+    ENACTED = "enacted"
+    AMENDED = "amended"
+    INSERTED = "inserted"
+    REPEALED = "repealed"
+    EFFECTIVE_DATE_CHANGED = "effective_date_changed"
+
+
+class ReferenceType(StrEnum):
+    """Kind of legal reference."""
+
+    EXPLICIT_REFERENCE = "explicit_reference"
+    IMPLICIT_REFERENCE = "implicit_reference"
+    UNKNOWN_EXTERNAL_RULE = "unknown_external_rule"
+    MISSING_INTERNAL_RULE = "missing_internal_rule"
+    ADMINISTRATIVE_DISCRETION = "administrative_discretion"
+
+
+class ReferenceStatus(StrEnum):
+    """Resolution status of a legal reference."""
+
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+    MISSING = "missing"
+
+
+class IncompletenessType(StrEnum):
+    """Reason a node cannot fully answer downstream questions."""
+
+    REQUIRES_MISSING_REGULATION = "requires_missing_regulation"
+    NOT_ANSWERABLE_FROM_CORPUS = "not_answerable_from_corpus"
+    PARTIAL_EVIDENCE_ONLY = "partial_evidence_only"
+    ADMINISTRATIVE_DISCRETION = "administrative_discretion"
 
 
 class DiagnosticSeverity(StrEnum):
@@ -29,6 +91,7 @@ class SourceSpan:
     char_start: int | None = None
     char_end: int | None = None
     extraction_method: str | None = None
+    text_hash: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -40,7 +103,24 @@ class SourceSpan:
             "char_start": self.char_start,
             "char_end": self.char_end,
             "extraction_method": self.extraction_method,
+            "text_hash": self.text_hash,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object] | None) -> SourceSpan | None:
+        if data is None:
+            return None
+        return cls(
+            source_file=_required_str(data, "source_file"),
+            page_start=_optional_int(data, "page_start"),
+            page_end=_optional_int(data, "page_end"),
+            line_start=_optional_int(data, "line_start"),
+            line_end=_optional_int(data, "line_end"),
+            char_start=_optional_int(data, "char_start"),
+            char_end=_optional_int(data, "char_end"),
+            extraction_method=_optional_str(data, "extraction_method"),
+            text_hash=_optional_str(data, "text_hash"),
+        )
 
 
 def merge_source_spans(
@@ -63,6 +143,7 @@ def merge_source_spans(
         char_start=_min_optional(first.char_start, second.char_start),
         char_end=_max_optional(first.char_end, second.char_end),
         extraction_method=first.extraction_method or second.extraction_method,
+        text_hash=first.text_hash or second.text_hash,
     )
 
 
@@ -112,11 +193,268 @@ class CleanDocument:
 
 
 @dataclass(slots=True, kw_only=True)
-class Article:
-    """Article-level representation for Phase 1.
+class AmendmentEvent:
+    """Amendment metadata attached to a regulation or provision."""
 
-    Clause parsing is intentionally not implemented yet, so article body lines
-    keep all content below the article heading.
+    event_type: AmendmentEventType
+    date: date | None = None
+    raw_text: str = ""
+    source_span: SourceSpan | None = None
+    note: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "event_type": self.event_type.value,
+            "date": self.date.isoformat() if self.date is not None else None,
+            "raw_text": self.raw_text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "note": self.note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> AmendmentEvent:
+        return cls(
+            event_type=AmendmentEventType(_required_str(data, "event_type")),
+            date=_optional_date(data, "date"),
+            raw_text=_required_str(data, "raw_text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            note=_optional_str(data, "note"),
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Reference:
+    """Reference from one legal node to another rule or document."""
+
+    id: str
+    source_node_id: str
+    reference_type: ReferenceType
+    status: ReferenceStatus
+    raw_text: str
+    target_name: str | None = None
+    target_type: str | None = None
+    target_node_id: str | None = None
+    required_document_name: str | None = None
+    confidence: float | None = None
+    source_span: SourceSpan | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "source_node_id": self.source_node_id,
+            "reference_type": self.reference_type.value,
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "target_name": self.target_name,
+            "target_type": self.target_type,
+            "target_node_id": self.target_node_id,
+            "required_document_name": self.required_document_name,
+            "confidence": self.confidence,
+            "source_span": _source_span_to_dict(self.source_span),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Reference:
+        return cls(
+            id=_required_str(data, "id"),
+            source_node_id=_required_str(data, "source_node_id"),
+            reference_type=ReferenceType(_required_str(data, "reference_type")),
+            status=ReferenceStatus(_required_str(data, "status")),
+            raw_text=_required_str(data, "raw_text"),
+            target_name=_optional_str(data, "target_name"),
+            target_type=_optional_str(data, "target_type"),
+            target_node_id=_optional_str(data, "target_node_id"),
+            required_document_name=_optional_str(data, "required_document_name"),
+            confidence=_optional_float(data, "confidence"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class IncompletenessFlag:
+    """Marker showing that a node requires unavailable legal context."""
+
+    id: str
+    node_id: str
+    flag_type: IncompletenessType
+    raw_text: str
+    missing_source: str | None = None
+    source_span: SourceSpan | None = None
+    note: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_id": self.node_id,
+            "flag_type": self.flag_type.value,
+            "raw_text": self.raw_text,
+            "missing_source": self.missing_source,
+            "source_span": _source_span_to_dict(self.source_span),
+            "note": self.note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> IncompletenessFlag:
+        return cls(
+            id=_required_str(data, "id"),
+            node_id=_required_str(data, "node_id"),
+            flag_type=IncompletenessType(_required_str(data, "flag_type")),
+            raw_text=_required_str(data, "raw_text"),
+            missing_source=_optional_str(data, "missing_source"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            note=_optional_str(data, "note"),
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class SubItem:
+    """Sub-item under an item, commonly marked with Korean letters."""
+
+    id: str
+    sub_item_number: str
+    path: list[str]
+    title: str | None = None
+    text: str = ""
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    references: list[Reference] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.SUB_ITEM.value,
+            "sub_item_number": self.sub_item_number,
+            "path": self.path,
+            "title": self.title,
+            "text": self.text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "references": [reference.to_dict() for reference in self.references],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> SubItem:
+        return cls(
+            id=_required_str(data, "id"),
+            sub_item_number=_required_str(data, "sub_item_number"),
+            path=_str_list(data, "path"),
+            title=_optional_str(data, "title"),
+            text=_required_str(data, "text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            references=[
+                Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Item:
+    """Numbered item under a clause."""
+
+    id: str
+    item_number: str
+    path: list[str]
+    title: str | None = None
+    text: str = ""
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    sub_items: list[SubItem] = field(default_factory=list)
+    references: list[Reference] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.ITEM.value,
+            "item_number": self.item_number,
+            "path": self.path,
+            "title": self.title,
+            "text": self.text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "sub_items": [sub_item.to_dict() for sub_item in self.sub_items],
+            "references": [reference.to_dict() for reference in self.references],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Item:
+        return cls(
+            id=_required_str(data, "id"),
+            item_number=_required_str(data, "item_number"),
+            path=_str_list(data, "path"),
+            title=_optional_str(data, "title"),
+            text=_required_str(data, "text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            sub_items=[
+                SubItem.from_dict(item) for item in _dict_list(data, "sub_items")
+            ],
+            references=[
+                Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Clause:
+    """Clause under an article."""
+
+    id: str
+    path: list[str]
+    clause_number: str | None = None
+    title: str | None = None
+    text: str = ""
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    items: list[Item] = field(default_factory=list)
+    references: list[Reference] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.CLAUSE.value,
+            "clause_number": self.clause_number,
+            "path": self.path,
+            "title": self.title,
+            "text": self.text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "items": [item.to_dict() for item in self.items],
+            "references": [reference.to_dict() for reference in self.references],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Clause:
+        return cls(
+            id=_required_str(data, "id"),
+            path=_str_list(data, "path"),
+            clause_number=_optional_str(data, "clause_number"),
+            title=_optional_str(data, "title"),
+            text=_required_str(data, "text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            items=[Item.from_dict(item) for item in _dict_list(data, "items")],
+            references=[
+                Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Article:
+    """Article-level representation.
+
+    Clause parsing is intentionally not implemented yet, so Phase 1 article body
+    lines remain available until they are migrated into clauses.
     """
 
     id: str
@@ -124,11 +462,22 @@ class Article:
     title: str | None
     path: list[str]
     source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    regulation_title: str | None = None
+    chapter_title: str | None = None
+    section_title: str | None = None
+    amendment_history: list[AmendmentEvent] = field(default_factory=list)
     body_lines: list[str] = field(default_factory=list)
+    clauses: list[Clause] = field(default_factory=list)
+    references: list[Reference] = field(default_factory=list)
+    incompleteness_flags: list[IncompletenessFlag] = field(default_factory=list)
 
     @property
     def text(self) -> str:
-        return "\n".join(self.body_lines)
+        if self.body_lines:
+            return "\n".join(self.body_lines)
+        return "\n".join(clause.text for clause in self.clauses if clause.text)
 
     def add_body_line(self, line: CleanLine) -> None:
         self.body_lines.append(line.text)
@@ -137,25 +486,69 @@ class Article:
     def to_dict(self) -> dict[str, object]:
         return {
             "id": self.id,
+            "node_type": NodeType.ARTICLE.value,
             "article_number": self.article_number,
             "title": self.title,
             "path": self.path,
             "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "regulation_title": self.regulation_title,
+            "chapter_title": self.chapter_title,
+            "section_title": self.section_title,
+            "amendment_history": [
+                amendment.to_dict() for amendment in self.amendment_history
+            ],
             "body_lines": self.body_lines,
+            "clauses": [clause.to_dict() for clause in self.clauses],
+            "references": [reference.to_dict() for reference in self.references],
+            "incompleteness_flags": [
+                flag.to_dict() for flag in self.incompleteness_flags
+            ],
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Article:
+        return cls(
+            id=_required_str(data, "id"),
+            article_number=_required_str(data, "article_number"),
+            title=_optional_str(data, "title"),
+            path=_str_list(data, "path"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            regulation_title=_optional_str(data, "regulation_title"),
+            chapter_title=_optional_str(data, "chapter_title"),
+            section_title=_optional_str(data, "section_title"),
+            amendment_history=[
+                AmendmentEvent.from_dict(item)
+                for item in _dict_list(data, "amendment_history")
+            ],
+            body_lines=_str_list(data, "body_lines"),
+            clauses=[Clause.from_dict(item) for item in _dict_list(data, "clauses")],
+            references=[
+                Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+            incompleteness_flags=[
+                IncompletenessFlag.from_dict(item)
+                for item in _dict_list(data, "incompleteness_flags")
+            ],
+        )
 
 
 @dataclass(slots=True, kw_only=True)
-class Chapter:
-    """Chapter containing parsed articles."""
+class Section:
+    """Optional section under a chapter."""
 
     id: str
     number: str
     title: str | None
     path: list[str]
     source_span: SourceSpan | None = None
-    articles: list[Article] = field(default_factory=list)
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
     intro_lines: list[str] = field(default_factory=list)
+    articles: list[Article] = field(default_factory=list)
 
     def add_intro_line(self, line: CleanLine) -> None:
         self.intro_lines.append(line.text)
@@ -164,39 +557,232 @@ class Chapter:
     def to_dict(self) -> dict[str, object]:
         return {
             "id": self.id,
+            "node_type": NodeType.SECTION.value,
             "number": self.number,
             "title": self.title,
             "path": self.path,
             "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
             "intro_lines": self.intro_lines,
             "articles": [article.to_dict() for article in self.articles],
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Section:
+        return cls(
+            id=_required_str(data, "id"),
+            number=_required_str(data, "number"),
+            title=_optional_str(data, "title"),
+            path=_str_list(data, "path"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            intro_lines=_str_list(data, "intro_lines"),
+            articles=[
+                Article.from_dict(item) for item in _dict_list(data, "articles")
+            ],
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Chapter:
+    """Chapter containing direct articles and optional sections."""
+
+    id: str
+    number: str
+    title: str | None
+    path: list[str]
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    sections: list[Section] = field(default_factory=list)
+    articles: list[Article] = field(default_factory=list)
+    intro_lines: list[str] = field(default_factory=list)
+
+    def add_intro_line(self, line: CleanLine) -> None:
+        self.intro_lines.append(line.text)
+        self.source_span = merge_source_spans(self.source_span, line.source_span)
+
+    def all_articles(self) -> list[Article]:
+        """Return direct and section-contained articles."""
+
+        section_articles = [
+            article for section in self.sections for article in section.articles
+        ]
+        return [*self.articles, *section_articles]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.CHAPTER.value,
+            "number": self.number,
+            "title": self.title,
+            "path": self.path,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "intro_lines": self.intro_lines,
+            "sections": [section.to_dict() for section in self.sections],
+            "articles": [article.to_dict() for article in self.articles],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Chapter:
+        return cls(
+            id=_required_str(data, "id"),
+            number=_required_str(data, "number"),
+            title=_optional_str(data, "title"),
+            path=_str_list(data, "path"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            intro_lines=_str_list(data, "intro_lines"),
+            sections=[
+                Section.from_dict(item) for item in _dict_list(data, "sections")
+            ],
+            articles=[
+                Article.from_dict(item) for item in _dict_list(data, "articles")
+            ],
+        )
+
+
+@dataclass(slots=True, kw_only=True)
+class Appendix:
+    """Appendix placeholder for future appendix parsing."""
+
+    id: str
+    path: list[str]
+    number: str | None = None
+    title: str | None = None
+    text: str = ""
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.APPENDIX.value,
+            "number": self.number,
+            "title": self.title,
+            "path": self.path,
+            "text": self.text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Appendix:
+        return cls(
+            id=_required_str(data, "id"),
+            path=_str_list(data, "path"),
+            number=_optional_str(data, "number"),
+            title=_optional_str(data, "title"),
+            text=_required_str(data, "text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+        )
+
 
 @dataclass(slots=True, kw_only=True)
 class Regulation:
-    """Parsed regulation tree for Phase 1."""
+    """Parsed regulation tree."""
 
     id: str
     title: str
     source_file: str
+    path: list[str] = field(default_factory=list)
+    institution: str | None = None
+    effective_date: date | None = None
+    amendment_date: date | None = None
     source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    amendment_history: list[AmendmentEvent] = field(default_factory=list)
     preamble_lines: list[str] = field(default_factory=list)
     chapters: list[Chapter] = field(default_factory=list)
+    appendices: list[Appendix] = field(default_factory=list)
+    references: list[Reference] = field(default_factory=list)
+    incompleteness_flags: list[IncompletenessFlag] = field(default_factory=list)
 
     def add_preamble_line(self, line: CleanLine) -> None:
         self.preamble_lines.append(line.text)
         self.source_span = merge_source_spans(self.source_span, line.source_span)
 
+    def all_articles(self) -> list[Article]:
+        """Return every article in document order for currently modeled nodes."""
+
+        return [
+            article
+            for chapter in self.chapters
+            for article in chapter.all_articles()
+        ]
+
     def to_dict(self) -> dict[str, object]:
         return {
             "id": self.id,
+            "node_type": NodeType.REGULATION.value,
             "title": self.title,
             "source_file": self.source_file,
+            "path": self.path,
+            "institution": self.institution,
+            "effective_date": (
+                self.effective_date.isoformat()
+                if self.effective_date is not None
+                else None
+            ),
+            "amendment_date": (
+                self.amendment_date.isoformat()
+                if self.amendment_date is not None
+                else None
+            ),
             "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "amendment_history": [
+                amendment.to_dict() for amendment in self.amendment_history
+            ],
             "preamble_lines": self.preamble_lines,
             "chapters": [chapter.to_dict() for chapter in self.chapters],
+            "appendices": [appendix.to_dict() for appendix in self.appendices],
+            "references": [reference.to_dict() for reference in self.references],
+            "incompleteness_flags": [
+                flag.to_dict() for flag in self.incompleteness_flags
+            ],
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Regulation:
+        return cls(
+            id=_required_str(data, "id"),
+            title=_required_str(data, "title"),
+            source_file=_required_str(data, "source_file"),
+            path=_str_list(data, "path"),
+            institution=_optional_str(data, "institution"),
+            effective_date=_optional_date(data, "effective_date"),
+            amendment_date=_optional_date(data, "amendment_date"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            amendment_history=[
+                AmendmentEvent.from_dict(item)
+                for item in _dict_list(data, "amendment_history")
+            ],
+            preamble_lines=_str_list(data, "preamble_lines"),
+            chapters=[
+                Chapter.from_dict(item) for item in _dict_list(data, "chapters")
+            ],
+            appendices=[
+                Appendix.from_dict(item) for item in _dict_list(data, "appendices")
+            ],
+            references=[
+                Reference.from_dict(item) for item in _dict_list(data, "references")
+            ],
+            incompleteness_flags=[
+                IncompletenessFlag.from_dict(item)
+                for item in _dict_list(data, "incompleteness_flags")
+            ],
+        )
 
 
 @dataclass(slots=True, kw_only=True)
@@ -211,6 +797,13 @@ class RegulationDocument:
             "schema_version": self.schema_version,
             "regulation": self.regulation.to_dict(),
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> RegulationDocument:
+        return cls(
+            schema_version=_required_str(data, "schema_version"),
+            regulation=Regulation.from_dict(_required_dict(data, "regulation")),
+        )
 
 
 @dataclass(slots=True, kw_only=True)
@@ -277,3 +870,80 @@ def _source_span_to_dict(source_span: SourceSpan | None) -> dict[str, object] | 
     if source_span is None:
         return None
     return source_span.to_dict()
+
+
+def _required_str(data: dict[str, object], key: str) -> str:
+    value = data[key]
+    if not isinstance(value, str):
+        raise TypeError(f"Expected '{key}' to be str.")
+    return value
+
+
+def _optional_str(data: dict[str, object], key: str) -> str | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError(f"Expected '{key}' to be str or None.")
+    return value
+
+
+def _optional_int(data: dict[str, object], key: str) -> int | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, int):
+        raise TypeError(f"Expected '{key}' to be int or None.")
+    return value
+
+
+def _optional_float(data: dict[str, object], key: str) -> float | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, int | float):
+        raise TypeError(f"Expected '{key}' to be float or None.")
+    return float(value)
+
+
+def _optional_date(data: dict[str, object], key: str) -> date | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError(f"Expected '{key}' to be ISO date string or None.")
+    return date.fromisoformat(value)
+
+
+def _required_dict(data: dict[str, object], key: str) -> dict[str, object]:
+    value = data[key]
+    if not isinstance(value, dict):
+        raise TypeError(f"Expected '{key}' to be object.")
+    return cast(dict[str, object], value)
+
+
+def _optional_dict(data: dict[str, object], key: str) -> dict[str, object] | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise TypeError(f"Expected '{key}' to be object or None.")
+    return cast(dict[str, object], value)
+
+
+def _str_list(data: dict[str, object], key: str) -> list[str]:
+    value = data.get(key, [])
+    if not isinstance(value, list):
+        raise TypeError(f"Expected '{key}' to be list.")
+    if not all(isinstance(item, str) for item in value):
+        raise TypeError(f"Expected every item in '{key}' to be str.")
+    return cast(list[str], value)
+
+
+def _dict_list(data: dict[str, object], key: str) -> list[dict[str, object]]:
+    value = data.get(key, [])
+    if not isinstance(value, list):
+        raise TypeError(f"Expected '{key}' to be list.")
+    if not all(isinstance(item, dict) for item in value):
+        raise TypeError(f"Expected every item in '{key}' to be object.")
+    return cast(list[dict[str, object]], value)

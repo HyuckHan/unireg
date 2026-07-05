@@ -48,6 +48,11 @@ Completed:
   - versioned JSON export
   - Markdown hierarchy export
   - exporter snapshot tests
+- Citation layer
+  - article, clause, item, and sub-item citations
+  - deterministic citation labels
+  - source file/page labels
+  - citation serialization tests
 
 ## Milestone 1: Section Parser
 
@@ -214,6 +219,8 @@ Tests:
 
 ## Milestone 8: Citation Layer
 
+Status: implemented.
+
 Goal:
 
 - Generate deterministic citations from parsed nodes and source spans.
@@ -224,6 +231,13 @@ Scope:
 - clause citation
 - item citation
 - source page/file labels
+
+Tests:
+
+- deterministic article/clause/item/sub-item labels
+- source page label generation
+- citation serialization round-trip
+- empty parse result citation guard
 
 ## Milestone 9: Search and RAG Preparation
 

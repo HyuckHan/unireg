@@ -53,6 +53,10 @@
   - Markdown hierarchy export
   - JSON export
   - Round-trip/snapshot tests
+- Citations
+  - Source span citation labels
+  - Article, clause, item, and sub-item citation projections
+  - Citation serialization tests
 
 ## Phase 2
 
@@ -73,10 +77,9 @@
 
 ## Phase 4
 
-- Citation support
-- Source span citation
-- Article, clause, and item-level citation
-- Citation validation tests
+- Citation compatibility validation
+- Citation display integration
+- Citation checks against source text hashes
 
 ## Phase 5
 

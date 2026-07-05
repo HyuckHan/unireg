@@ -1,5 +1,6 @@
 """UniReg regulation parser."""
 
+from unireg.citations import Citation, CitationGenerator
 from unireg.cleaning import DocumentCleaner
 from unireg.exporters import JSONExporter, MarkdownExporter
 from unireg.loaders import PDFLoader
@@ -33,6 +34,8 @@ __all__ = [
     "Appendix",
     "Article",
     "Chapter",
+    "Citation",
+    "CitationGenerator",
     "Clause",
     "DocumentCleaner",
     "IncompletenessFlag",

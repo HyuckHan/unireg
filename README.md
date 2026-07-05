@@ -71,3 +71,16 @@ if result.document is None:
 JSONExporter().dump(result.document, "out/regulation.json")
 MarkdownExporter().dump(result.document, "out/regulation.md")
 ```
+
+## Citations
+
+```python
+from unireg.citations import CitationGenerator
+from unireg.parser import RegulationParser
+
+result = RegulationParser().parse_file("examples/pdf/sample.pdf")
+citations = CitationGenerator().generate(result)
+
+for citation in citations[:5]:
+    print(citation.label, citation.source_label)
+```

@@ -489,13 +489,15 @@ Citations should be derived from legal nodes and source spans.
 @dataclass(slots=True, kw_only=True)
 class Citation:
     node_id: str
+    node_type: NodeType
     regulation_title: str
     label: str
+    source_label: str
     source_span: SourceSpan | None
     quote: str | None = None
 ```
 
-Citation labels should be deterministic.
+Citation labels and source labels should be deterministic.
 
 Examples:
 
@@ -503,6 +505,8 @@ Examples:
 Graduate School Regulation, Article 1
 Graduate School Regulation, Article 1, Clause 1
 Graduate School Regulation, Article 1, Clause 1, Item 2
+source.pdf p.1
+source.pdf pp.1-2
 ```
 
 Citation generation must not depend on LLM output. It should use the parsed

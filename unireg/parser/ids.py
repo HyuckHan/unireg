@@ -40,6 +40,14 @@ def sub_item_id(parent_id: str, sub_item_fragment: str) -> str:
     return f"{parent_id}/sub-item:{_slugify(sub_item_fragment)}"
 
 
+def appendix_id(parent_id: str, appendix_fragment: str) -> str:
+    return f"{parent_id}/appendix:{_slugify(appendix_fragment)}"
+
+
+def table_id(parent_id: str, table_fragment: str) -> str:
+    return f"{parent_id}/table:{_slugify(table_fragment)}"
+
+
 def _slugify(value: str) -> str:
     value = value.strip().lower()
     value = _UNSAFE_ID_CHARS_RE.sub("-", value)

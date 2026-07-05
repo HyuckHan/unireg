@@ -47,6 +47,22 @@ class SubItemSegment:
     raw_text: str
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AppendixHeading:
+    kind: str
+    number: str | None
+    title: str | None
+    body_text: str | None
+    creates_table: bool = False
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TableHeading:
+    number: str | None
+    caption: str | None
+    body_text: str | None
+
+
 _CLAUSE_MARKERS = {
     "①": "1",
     "②": "2",
@@ -80,6 +96,18 @@ _ARTICLE_RE = re.compile(
     r"\s*(?:\((?P<title>[^)]*)\))?"
     r"\s*(?P<body>.*)$"
 )
+_SUPPLEMENTARY_RE = re.compile(r"^부\s*칙(?![에의을를은는과와])\s*(?P<body>.*)$")
+_BRACKETED_ANNEX_RE = re.compile(
+    r"^[\[\(【]\s*별\s*표\s*(?P<number>\d+)?\s*[\]\)】]\s*(?P<body>.*)$"
+)
+_PLAIN_ANNEX_RE = re.compile(r"^별\s*표\s*(?P<number>\d+)\s+(?P<body>.*)$")
+_BRACKETED_FORM_RE = re.compile(
+    r"^[\[\(【]\s*서\s*식\s*(?P<number>제\s*\d+\s*호)?\s*[\]\)】]\s*(?P<body>.*)$"
+)
+_BRACKETED_TABLE_RE = re.compile(
+    r"^[\[\(【]\s*표\s*(?P<number>\d+)?\s*[\]\)】]\s*(?P<body>.*)$"
+)
+_PLAIN_TABLE_RE = re.compile(r"^표\s*(?P<number>\d+)\s+(?P<body>.*)$")
 
 
 def parse_chapter_heading(text: str) -> ChapterHeading | None:
@@ -205,8 +233,62 @@ def parse_sub_item_segments(text: str) -> list[SubItemSegment]:
     return segments
 
 
+def parse_appendix_heading(text: str) -> AppendixHeading | None:
+    supplementary_match = _SUPPLEMENTARY_RE.match(text)
+    if supplementary_match is not None:
+        return AppendixHeading(
+            kind="supplementary",
+            number=None,
+            title="부칙",
+            body_text=_empty_to_none(supplementary_match.group("body")),
+        )
+
+    annex_match = _BRACKETED_ANNEX_RE.match(text) or _PLAIN_ANNEX_RE.match(text)
+    if annex_match is not None:
+        number = _compact_spaces(annex_match.group("number"))
+        title = f"별표 {number}" if number is not None else "별표"
+        return AppendixHeading(
+            kind="annex",
+            number=number,
+            title=title,
+            body_text=_empty_to_none(annex_match.group("body")),
+            creates_table=True,
+        )
+
+    form_match = _BRACKETED_FORM_RE.match(text)
+    if form_match is not None:
+        number = _compact_spaces(form_match.group("number"))
+        title = f"서식 {number}" if number is not None else "서식"
+        return AppendixHeading(
+            kind="form",
+            number=number,
+            title=title,
+            body_text=_empty_to_none(form_match.group("body")),
+        )
+
+    return None
+
+
+def parse_table_heading(text: str) -> TableHeading | None:
+    match = _BRACKETED_TABLE_RE.match(text) or _PLAIN_TABLE_RE.match(text)
+    if match is None:
+        return None
+
+    number = _compact_spaces(match.group("number"))
+    caption = f"표 {number}" if number is not None else "표"
+    body_text = _empty_to_none(match.group("body"))
+    return TableHeading(number=number, caption=caption, body_text=body_text)
+
+
 def _empty_to_none(value: str | None) -> str | None:
     if value is None:
         return None
     value = value.strip()
+    return value or None
+
+
+def _compact_spaces(value: str | None) -> str | None:
+    if value is None:
+        return None
+    value = re.sub(r"\s+", "", value)
     return value or None

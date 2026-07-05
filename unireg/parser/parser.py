@@ -7,6 +7,7 @@ from pathlib import Path
 from unireg.cleaning import DocumentCleaner
 from unireg.loaders import PDFLoader
 from unireg.models import (
+    Appendix,
     Article,
     Chapter,
     Clause,
@@ -21,14 +22,18 @@ from unireg.models import (
     Regulation,
     RegulationDocument,
     Section,
+    Table,
     merge_source_spans,
 )
 from unireg.parser.amendments import AmendmentStatusEnricher
+from unireg.parser.appendices import AppendixParser
 from unireg.parser.articles import ArticleParser
 from unireg.parser.chapters import ChapterParser
 from unireg.parser.clauses import ClauseParser
 from unireg.parser.ids import chapter_id, regulation_id
+from unireg.parser.patterns import AppendixHeading
 from unireg.parser.sections import SectionParser
+from unireg.parser.tables import TableParser
 
 
 class RegulationParser:
@@ -43,6 +48,8 @@ class RegulationParser:
         section_parser: SectionParser | None = None,
         article_parser: ArticleParser | None = None,
         clause_parser: ClauseParser | None = None,
+        appendix_parser: AppendixParser | None = None,
+        table_parser: TableParser | None = None,
         amendment_enricher: AmendmentStatusEnricher | None = None,
     ) -> None:
         self._pdf_loader = pdf_loader or PDFLoader()
@@ -51,6 +58,8 @@ class RegulationParser:
         self._section_parser = section_parser or SectionParser()
         self._article_parser = article_parser or ArticleParser()
         self._clause_parser = clause_parser or ClauseParser()
+        self._appendix_parser = appendix_parser or AppendixParser()
+        self._table_parser = table_parser or TableParser()
         self._amendment_enricher = amendment_enricher or AmendmentStatusEnricher()
 
     def parse_file(self, source_file: str | Path) -> ParseResult:
@@ -98,6 +107,8 @@ class RegulationParser:
         current_section = None
         current_article = None
         current_clause = None
+        current_appendix: Appendix | None = None
+        current_table: Table | None = None
         highest_chapter_number = 0
         parsed_line_count = 0
         unknown_line_count = 0
@@ -109,6 +120,39 @@ class RegulationParser:
             )
 
             if title_line is not None and line.line_number == title_line.line_number:
+                parsed_line_count += 1
+                continue
+
+            appendix_heading = self._appendix_parser.match(line)
+            if appendix_heading is not None:
+                current_appendix = self._create_appendix(
+                    regulation_id=regulation.id,
+                    line=line,
+                    heading=appendix_heading,
+                    appendix_index=len(regulation.appendices) + 1,
+                )
+                regulation.appendices.append(current_appendix)
+                current_table = None
+                if appendix_heading.creates_table:
+                    current_table = self._create_table_for_appendix(
+                        appendix=current_appendix,
+                        line=line,
+                        heading=appendix_heading,
+                    )
+                    current_appendix.tables.append(current_table)
+                current_chapter = None
+                current_section = None
+                current_article = None
+                current_clause = None
+                parsed_line_count += 1
+                continue
+
+            if current_appendix is not None:
+                current_table = self._add_appendix_line(
+                    appendix=current_appendix,
+                    line=line,
+                    current_table=current_table,
+                )
                 parsed_line_count += 1
                 continue
 
@@ -323,10 +367,63 @@ class RegulationParser:
             last_clause = clause
         return last_clause
 
+    def _add_appendix_line(
+        self,
+        *,
+        appendix: Appendix,
+        line: CleanLine,
+        current_table: Table | None,
+    ) -> Table | None:
+        table_heading = self._table_parser.match(line)
+        if table_heading is not None:
+            self._appendix_parser.append_to_appendix(appendix, line)
+            table = self._table_parser.create_table(
+                appendix=appendix,
+                line=line,
+                heading=table_heading,
+                table_index=len(appendix.tables) + 1,
+            )
+            appendix.tables.append(table)
+            return table
+
+        self._appendix_parser.append_to_appendix(appendix, line)
+        if current_table is not None:
+            self._table_parser.append_to_table(current_table, line)
+        return current_table
+
     @staticmethod
     def _line_with_text(line: CleanLine, text: str) -> CleanLine:
         return CleanLine(
             text=text,
             source_span=line.source_span,
             line_number=line.line_number,
+        )
+
+    def _create_appendix(
+        self,
+        *,
+        regulation_id: str,
+        line: CleanLine,
+        heading: AppendixHeading,
+        appendix_index: int,
+    ) -> Appendix:
+        return self._appendix_parser.create_appendix(
+            regulation_id=regulation_id,
+            line=line,
+            heading=heading,
+            appendix_index=appendix_index,
+        )
+
+    def _create_table_for_appendix(
+        self,
+        *,
+        appendix: Appendix,
+        line: CleanLine,
+        heading: AppendixHeading,
+    ) -> Table:
+        return self._table_parser.create_for_appendix(
+            appendix=appendix,
+            line=line,
+            heading=heading,
+            table_index=len(appendix.tables) + 1,
         )

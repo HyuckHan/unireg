@@ -35,6 +35,10 @@ Completed:
   - regulation effective/amendment date extraction
   - article amendment event extraction
   - deleted/repealed article status detection
+- Appendix and table placeholders
+  - `부칙`, `[별표 n]`, and `【서식 제n호】` detection
+  - appendix-level raw text preservation
+  - table placeholder nodes for annex table content
 
 ## Milestone 1: Section Parser
 
@@ -133,6 +137,8 @@ Tests:
 
 ## Milestone 5: Appendix and Table Placeholders
 
+Status: implemented.
+
 Goal:
 
 - Preserve appendices, supplementary provisions, forms, and table-like content.
@@ -143,6 +149,13 @@ Scope:
 - `[별표 n]`
 - `【서식 제n호】`
 - table placeholder nodes with raw text and source spans.
+
+Tests:
+
+- appendix and table heading pattern tests
+- parser fixture for supplementary provisions, annexes, forms, and tables
+- serialization round-trip for appendix/table nodes
+- real PDF appendix/table regression
 
 ## Milestone 6: Reference and Incompleteness Detection
 

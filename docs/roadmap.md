@@ -37,6 +37,12 @@
   - Clause parser
   - Item parser
   - Sub-item parser
+  - Appendix parser
+  - Table placeholder parser
+- Metadata enrichment
+  - Repealed provisions
+  - Newly inserted provisions
+  - Effective dates
 - Parser validation
   - Hierarchy preservation tests
   - Source metadata tests
@@ -44,12 +50,6 @@
 
 ## Phase 2
 
-- Amendment and status detection
-  - Repealed provisions
-  - Newly inserted provisions
-  - Effective dates
-  - Appendix markers
-  - Table placeholders
 - Reference detection
   - Explicit references
   - Missing internal rules

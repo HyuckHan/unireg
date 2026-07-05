@@ -205,6 +205,53 @@ def test_parser_builds_section_hierarchy() -> None:
     assert second_section.articles[0].article_number == "제3조"
 
 
+def test_parser_preserves_appendices_and_table_placeholders() -> None:
+    text = """
+테스트 규정
+제1장 총칙
+제1조(목적)
+본문
+부칙
+제1조(시행일)
+이 규정은 공포한 날부터 시행한다.
+[별표 1] 입학정원
+대학 학과 정원
+인문대학 국문학과 10
+【서식 제2호】
+성명:
+"""
+
+    result = RegulationParser().parse_text(text, source_file="appendix.txt")
+
+    assert result.document is not None
+    regulation = result.document.regulation
+    assert result.stats.article_count == 1
+    assert regulation.chapters[0].articles[0].body_lines == ["본문"]
+    assert [appendix.title for appendix in regulation.appendices] == [
+        "부칙",
+        "별표 1",
+        "서식 제2호",
+    ]
+
+    supplementary = regulation.appendices[0]
+    assert supplementary.text == "제1조(시행일)\n이 규정은 공포한 날부터 시행한다."
+    assert supplementary.tables == []
+
+    annex = regulation.appendices[1]
+    assert annex.number == "1"
+    assert annex.text == "입학정원\n대학 학과 정원\n인문대학 국문학과 10"
+    assert annex.raw_text == ("[별표 1] 입학정원\n대학 학과 정원\n인문대학 국문학과 10")
+    assert len(annex.tables) == 1
+    assert annex.tables[0].caption == "별표 1"
+    assert annex.tables[0].text == annex.text
+    assert annex.tables[0].raw_text == annex.raw_text
+    assert annex.tables[0].source_span is not None
+
+    form = regulation.appendices[2]
+    assert form.number == "제2호"
+    assert form.text == "성명:"
+
+
 def test_parser_warns_and_creates_implicit_chapter_for_section_before_chapter() -> None:
     text = """
 장 없는 규정
@@ -290,3 +337,20 @@ def test_parser_handles_real_pdf_extraction() -> None:
     assert chapter_24.number == "24"
     assert chapter_24.title == "시간제등록생"
     assert chapter_24.articles[0].article_number == "제80조"
+
+    assert len(regulation.appendices) >= 4
+    assert [appendix.title for appendix in regulation.appendices[-4:]] == [
+        "별표 1",
+        "별표 2",
+        "서식 제2호",
+        "서식 제3호",
+    ]
+    assert [len(appendix.tables) for appendix in regulation.appendices[-4:]] == [
+        1,
+        1,
+        0,
+        0,
+    ]
+    assert not any(
+        "부칙" in line for line in regulation.chapters[-1].articles[-1].body_lines
+    )

@@ -642,6 +642,51 @@ class Chapter:
 
 
 @dataclass(slots=True, kw_only=True)
+class Table:
+    """Table placeholder preserving raw table-like content."""
+
+    id: str
+    path: list[str]
+    caption: str | None = None
+    text: str = ""
+    source_span: SourceSpan | None = None
+    status: ProvisionStatus = ProvisionStatus.ACTIVE
+    raw_text: str | None = None
+    rows: list[list[str]] = field(default_factory=list)
+
+    def add_line(self, line: CleanLine) -> None:
+        self.text = _join_text(self.text, line.text)
+        self.raw_text = _join_text(self.raw_text or "", line.text)
+        self.source_span = merge_source_spans(self.source_span, line.source_span)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "node_type": NodeType.TABLE.value,
+            "path": self.path,
+            "caption": self.caption,
+            "text": self.text,
+            "source_span": _source_span_to_dict(self.source_span),
+            "status": self.status.value,
+            "raw_text": self.raw_text,
+            "rows": self.rows,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Table:
+        return cls(
+            id=_required_str(data, "id"),
+            path=_str_list(data, "path"),
+            caption=_optional_str(data, "caption"),
+            text=_required_str(data, "text"),
+            source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
+            status=ProvisionStatus(_required_str(data, "status")),
+            raw_text=_optional_str(data, "raw_text"),
+            rows=_str_matrix(data, "rows"),
+        )
+
+
+@dataclass(slots=True, kw_only=True)
 class Appendix:
     """Appendix placeholder for future appendix parsing."""
 
@@ -653,6 +698,12 @@ class Appendix:
     source_span: SourceSpan | None = None
     status: ProvisionStatus = ProvisionStatus.ACTIVE
     raw_text: str | None = None
+    tables: list[Table] = field(default_factory=list)
+
+    def add_line(self, line: CleanLine) -> None:
+        self.text = _join_text(self.text, line.text)
+        self.raw_text = _join_text(self.raw_text or "", line.text)
+        self.source_span = merge_source_spans(self.source_span, line.source_span)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -665,6 +716,7 @@ class Appendix:
             "source_span": _source_span_to_dict(self.source_span),
             "status": self.status.value,
             "raw_text": self.raw_text,
+            "tables": [table.to_dict() for table in self.tables],
         }
 
     @classmethod
@@ -678,6 +730,7 @@ class Appendix:
             source_span=SourceSpan.from_dict(_optional_dict(data, "source_span")),
             status=ProvisionStatus(_required_str(data, "status")),
             raw_text=_optional_str(data, "raw_text"),
+            tables=[Table.from_dict(item) for item in _dict_list(data, "tables")],
         )
 
 
@@ -860,6 +913,12 @@ def _source_span_to_dict(source_span: SourceSpan | None) -> dict[str, object] | 
     return source_span.to_dict()
 
 
+def _join_text(existing: str, addition: str) -> str:
+    if not existing:
+        return addition
+    return f"{existing}\n{addition}"
+
+
 def _required_str(data: dict[str, object], key: str) -> str:
     value = data[key]
     if not isinstance(value, str):
@@ -935,3 +994,15 @@ def _dict_list(data: dict[str, object], key: str) -> list[dict[str, object]]:
     if not all(isinstance(item, dict) for item in value):
         raise TypeError(f"Expected every item in '{key}' to be object.")
     return cast(list[dict[str, object]], value)
+
+
+def _str_matrix(data: dict[str, object], key: str) -> list[list[str]]:
+    value = data.get(key, [])
+    if not isinstance(value, list):
+        raise TypeError(f"Expected '{key}' to be list.")
+    if not all(
+        isinstance(row, list) and all(isinstance(item, str) for item in row)
+        for row in value
+    ):
+        raise TypeError(f"Expected every row in '{key}' to be a list of str.")
+    return cast(list[list[str]], value)

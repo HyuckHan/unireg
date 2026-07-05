@@ -22,6 +22,7 @@ from unireg.models import (
     Section,
     SourceSpan,
     SubItem,
+    Table,
 )
 from unireg.parser import RegulationParser
 
@@ -48,4 +49,5 @@ __all__ = [
     "Section",
     "SourceSpan",
     "SubItem",
+    "Table",
 ]

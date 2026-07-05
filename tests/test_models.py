@@ -5,6 +5,7 @@ from datetime import date
 from unireg.models import (
     AmendmentEvent,
     AmendmentEventType,
+    Appendix,
     Article,
     Chapter,
     Clause,
@@ -20,6 +21,7 @@ from unireg.models import (
     Section,
     SourceSpan,
     SubItem,
+    Table,
 )
 
 
@@ -74,6 +76,24 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         missing_source="시행세칙",
         source_span=span,
     )
+    table = Table(
+        id="reg/appendix:annex-1/table:1",
+        path=["appendix:annex-1", "table:1"],
+        caption="별표 1",
+        text="대학 학과 정원",
+        raw_text="[별표 1]\n대학 학과 정원",
+        source_span=span,
+    )
+    appendix = Appendix(
+        id="reg/appendix:annex-1",
+        path=["appendix:annex-1"],
+        number="1",
+        title="별표 1",
+        text="대학 학과 정원",
+        raw_text="[별표 1]\n대학 학과 정원",
+        source_span=span,
+        tables=[table],
+    )
     article = Article(
         id="reg/chapter:1/section:1/article:1",
         article_number="제1조",
@@ -122,6 +142,7 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
                 sections=[section],
             )
         ],
+        appendices=[appendix],
         references=[reference],
         incompleteness_flags=[flag],
     )
@@ -142,6 +163,7 @@ def test_regulation_document_round_trips_full_hierarchy() -> None:
         == "가"
     )
     assert restored.regulation.references[0].status == ReferenceStatus.MISSING
+    assert restored.regulation.appendices[0].tables[0].caption == "별표 1"
 
 
 def test_chapter_all_articles_includes_section_articles() -> None:

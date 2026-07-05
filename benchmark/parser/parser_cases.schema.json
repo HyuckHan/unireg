@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UniRegBench Parser Case",
+  "type": "object",
+  "required": ["id", "source_file"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "source_file": { "type": "string", "minLength": 1 },
+    "expected_title": { "type": ["string", "null"] },
+    "expected_chapter_count": { "type": ["integer", "null"], "minimum": 0 },
+    "expected_article_count": { "type": ["integer", "null"], "minimum": 0 },
+    "expected_clause_count": { "type": ["integer", "null"], "minimum": 0 },
+    "min_article_count": { "type": ["integer", "null"], "minimum": 0 },
+    "min_clause_count": { "type": ["integer", "null"], "minimum": 0 },
+    "min_citation_count": { "type": ["integer", "null"], "minimum": 0 },
+    "required_citations": {
+      "type": "array",
+      "items": { "$ref": "../questions/questions.schema.json#/$defs/gold_citation" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

@@ -141,3 +141,33 @@ print(projection.bm25_documents[0].text)
 print(projection.vector_documents[0].metadata)
 print(projection.graph_edges[0].edge_type)
 ```
+
+## UniRegBench
+
+The local benchmark expects university samples under `unireg-eval/` and
+currently includes parser/question fixtures for five `학칙.pdf` files:
+
+- Dongduk Women's University
+- Dongyang Mirae University
+- Duksung Women's University
+- Kwangwoon University
+- Seoul Women's University
+
+Validate the benchmark dataset:
+
+```bash
+.venv/bin/python scripts/unireg_benchmark.py validate --benchmark-dir benchmark
+```
+
+Run the reproducible parser/retrieval benchmark:
+
+```bash
+.venv/bin/python scripts/unireg_benchmark.py run \
+  --benchmark-dir benchmark \
+  --predictions benchmark/retrieval/predictions.sample.jsonl \
+  --report-dir benchmark/reports
+```
+
+Reports are written as JSON, CSV, and Markdown.
+Use `benchmark/retrieval/predictions.sample.jsonl` only as a reproducible
+gold-first fixture; replace it with real retrieval output for experiments.

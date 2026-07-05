@@ -366,3 +366,54 @@ Tests:
 - missing-reference graph edge generation
 - projection serialization round-trip
 - empty parse result guard
+
+## Milestone 11: UniRegBench
+
+Status: implemented.
+
+Goal:
+
+- Create the canonical reproducible benchmark dataset and evaluation CLI for
+  parser and retrieval outputs.
+
+Scope:
+
+- benchmark directory layout
+- JSONL question schema
+- parser benchmark case schema
+- retrieval prediction schema
+- benchmark loader
+- benchmark validation
+- parser evaluation
+- retrieval metric evaluation
+- JSON, CSV, and Markdown reports
+
+Implemented behavior:
+
+- `benchmark/` contains stable question, parser, retrieval, QA, and reports
+  directories.
+- `unireg.benchmark` exposes dataclasses, loaders, validation, evaluation, and
+  report writers.
+- `scripts/unireg_benchmark.py` and `python -m unireg.benchmark` provide a
+  usable CLI.
+- `unireg-benchmark` is available as a package console script after install.
+- Retrieval evaluation supports Recall@1, Recall@3, Recall@5, and MRR.
+- Parser evaluation reports article extraction, clause extraction, hierarchy,
+  citation, and metadata scores.
+- The local benchmark dataset covers five university `학칙.pdf` files under
+  `unireg-eval/`.
+- University-specific questions include `source_file` in gold citations so
+  retrieval evaluation disambiguates identical article numbers across
+  institutions.
+- Parser cases use reviewed structural thresholds and required citations rather
+  than exact chapter counts while inline chapter heading handling remains a
+  known parser robustness issue.
+
+Reproducible run:
+
+```bash
+.venv/bin/python scripts/unireg_benchmark.py run \
+  --benchmark-dir benchmark \
+  --predictions benchmark/retrieval/predictions.sample.jsonl \
+  --report-dir benchmark/reports
+```

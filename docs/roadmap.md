@@ -75,6 +75,17 @@
 
 ## Phase 3
 
+- UniRegBench
+  - Benchmark schema
+  - Benchmark loader and validation
+  - University-specific parser and question fixtures
+  - Gold citations scoped by source file
+  - Parser evaluation reports
+  - Retrieval metrics for supplied predictions
+  - Reproducible benchmark CLI
+
+## Phase 4
+
 - Reference resolution
   - Corpus-level reference matching
   - Missing internal rule confirmation
@@ -84,40 +95,40 @@
   - Missing-source preservation
   - Graph edge preparation
 
-## Phase 4
+## Phase 5
 
 - JSON schema publication
 - Export compatibility tests across schema versions
 - CLI export commands
 
-## Phase 5
+## Phase 6
 
 - Citation compatibility validation
 - Citation display integration
 - Citation checks against source text hashes
 
-## Phase 6
+## Phase 7
 
 - Knowledge graph
 - Reference graph
 - Missing-reference graph edges
 - Regulation-to-regulation links
 
-## Phase 7
+## Phase 8
 
 - Search engine
   - BM25
   - Metadata-aware filtering
   - Hierarchy-aware result grouping
 
-## Phase 8
+## Phase 9
 
 - Vector database
 - Embedding chunk strategy
 - Article, clause, and item chunks
 - Metadata preservation
 
-## Phase 9
+## Phase 10
 
 - RAG
 - Hybrid retrieval
@@ -125,7 +136,7 @@
 - Answer completeness classification
 - Missing-regulation reporting
 
-## Phase 10
+## Phase 11
 
 - Web UI
 - Regulation browser
@@ -133,7 +144,7 @@
 - Citation display
 - Missing-reference display
 
-## Phase 11
+## Phase 12
 
 - Multi-university support
 - Institution metadata

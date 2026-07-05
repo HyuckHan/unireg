@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UniRegBench Question",
+  "type": "object",
+  "required": ["id", "question", "answerability", "gold_citations"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "question": { "type": "string", "minLength": 1 },
+    "answerability": {
+      "type": "string",
+      "enum": [
+        "answerable",
+        "partially_answerable",
+        "missing_regulation",
+        "unanswerable",
+        "comparison",
+        "multi_hop"
+      ]
+    },
+    "gold_citations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/gold_citation" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "gold_citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "article": { "type": ["string", "null"] },
+        "clause": { "type": ["string", "null"] },
+        "item": { "type": ["string", "null"] },
+        "sub_item": { "type": ["string", "null"] },
+        "node_id": { "type": ["string", "null"] },
+        "regulation_title": { "type": ["string", "null"] },
+        "source_file": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

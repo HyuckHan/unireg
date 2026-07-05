@@ -12,6 +12,9 @@ dependencies = [
     "pypdf>=5.0",
 ]
 
+[project.scripts]
+unireg-benchmark = "unireg.benchmark.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "black>=24.0",

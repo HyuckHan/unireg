@@ -13,7 +13,12 @@ dependencies = [
 ]
 
 [project.scripts]
+unireg = "unireg.cli:main"
+unireg-error-analysis = "unireg.analysis.cli:main"
+unireg-experiment = "unireg.experiments.cli:main"
 unireg-benchmark = "unireg.benchmark.cli:main"
+unireg-qa = "unireg.qa.cli:main"
+unireg-retrieval = "unireg.retrieval.cli:main"
 
 [project.optional-dependencies]
 dev = [

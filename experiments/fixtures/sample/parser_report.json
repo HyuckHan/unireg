@@ -1,0 +1,43 @@
+{
+  "case_count": 2,
+  "ok_count": 2,
+  "article_extraction_accuracy": 1.0,
+  "clause_extraction_accuracy": 1.0,
+  "hierarchy_preservation": 1.0,
+  "citation_generation": 1.0,
+  "metadata_completeness": 0.95,
+  "cases": [
+    {
+      "id": "sample_alpha",
+      "source_file": "sample_university_alpha/학칙.pdf",
+      "ok": true,
+      "title": "학칙",
+      "chapter_count": 1,
+      "article_count": 2,
+      "clause_count": 2,
+      "citation_count": 4,
+      "article_extraction_accuracy": 1.0,
+      "clause_extraction_accuracy": 1.0,
+      "hierarchy_preservation": 1.0,
+      "citation_generation": 1.0,
+      "metadata_completeness": 1.0,
+      "error": ""
+    },
+    {
+      "id": "sample_beta",
+      "source_file": "sample_university_beta/학칙.pdf",
+      "ok": true,
+      "title": "학칙",
+      "chapter_count": 1,
+      "article_count": 2,
+      "clause_count": 2,
+      "citation_count": 4,
+      "article_extraction_accuracy": 1.0,
+      "clause_extraction_accuracy": 1.0,
+      "hierarchy_preservation": 1.0,
+      "citation_generation": 1.0,
+      "metadata_completeness": 0.9,
+      "error": ""
+    }
+  ]
+}

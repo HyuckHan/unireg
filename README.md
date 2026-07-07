@@ -171,3 +171,123 @@ Run the reproducible parser/retrieval benchmark:
 Reports are written as JSON, CSV, and Markdown.
 Use `benchmark/retrieval/predictions.sample.jsonl` only as a reproducible
 gold-first fixture; replace it with real retrieval output for experiments.
+
+## Retrieval Evaluation
+
+Run the deterministic BM25 baseline without using any LLM or external API:
+
+```bash
+.venv/bin/python scripts/unireg_retrieval.py bm25 \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --predictions benchmark/retrieval/predictions.bm25.jsonl \
+  --units article,clause,item,sub_item \
+  --scope question_source \
+  --top-k 5
+```
+
+The runner parses the benchmark source PDFs, builds article/clause/item/sub-item
+retrieval units, ranks citations with BM25, and writes:
+
+- `benchmark/retrieval/predictions.bm25.jsonl`
+- `benchmark/reports/retrieval_bm25_report.json`
+- `benchmark/reports/retrieval_bm25_questions.csv`
+- `benchmark/reports/retrieval_bm25_hits.csv`
+
+The default scope is `question_source`, which searches only the source file
+identified by each benchmark question. Use `--scope corpus` to search across all
+benchmark source files.
+
+## Grounded QA
+
+Run LLM-independent grounded QA with the deterministic MockLLM adapter:
+
+```bash
+.venv/bin/python scripts/unireg_qa.py \
+  --question questions/example.txt \
+  --retriever bm25 \
+  --llm mock \
+  --benchmark-dir benchmark \
+  --output /tmp/unireg-qa-answer.json
+```
+
+Run QA over the benchmark questions:
+
+```bash
+.venv/bin/python scripts/unireg_qa.py \
+  --benchmark \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --retriever bm25 \
+  --llm mock \
+  --scope question_source \
+  --top-k 5
+```
+
+The QA framework records a full trace for each answer:
+
+```text
+Question -> Retrieved Evidence -> Evidence Package -> LLM Input
+-> Grounded Answer -> Evaluation
+```
+
+Benchmark QA writes:
+
+- `benchmark/reports/qa_mock_report.json`
+- `benchmark/reports/qa_mock_questions.csv`
+- `benchmark/reports/qa_mock_answers.jsonl`
+
+The MockLLM adapter does not call external APIs. Future OpenAI, Anthropic,
+Gemini, or local adapters should consume the same Evidence Package contract.
+
+## QA Error Analysis
+
+Analyze benchmark QA traces to explain why each answer succeeded or failed:
+
+```bash
+.venv/bin/python scripts/unireg_analyze_errors.py \
+  --traces benchmark/reports/qa_mock_answers.jsonl \
+  --out benchmark/reports/error_analysis \
+  --benchmark-dir benchmark
+```
+
+The same analyzer is available from the top-level CLI:
+
+```bash
+unireg analyze-errors \
+  --traces benchmark/reports/qa_mock_answers.jsonl \
+  --out benchmark/reports/error_analysis
+```
+
+The analyzer writes JSON, CSV, and Markdown reports with error taxonomy counts,
+answerability breakdowns, retriever breakdowns, per-university summaries, top
+failed questions, and representative examples.
+
+## Experimental Evaluation
+
+Run a reproducible offline experiment suite from a JSON config:
+
+```bash
+.venv/bin/python scripts/unireg_experiment.py run \
+  --config experiments/configs/sample_offline.json
+```
+
+Aggregate one or more runs into a paper-style summary:
+
+```bash
+.venv/bin/python scripts/unireg_experiment.py summarize \
+  --runs experiments/runs \
+  --out experiments/reports/summary.md
+```
+
+The same commands are available through the top-level CLI:
+
+```bash
+unireg experiment run --config experiments/configs/sample_offline.json
+unireg experiment summarize --runs experiments/runs --out experiments/reports/summary.md
+```
+
+Experiment runs write metadata, JSON results, CSV metrics, Markdown summaries,
+and paper-style tables. The bundled sample config uses synthetic precomputed
+fixtures only; it does not require private PDFs, API keys, external datasets, or
+online LLM calls.

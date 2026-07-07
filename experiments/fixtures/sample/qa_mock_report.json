@@ -1,0 +1,81 @@
+{
+  "metrics": {
+    "question_count": 3,
+    "citation_accuracy": 0.6666666667,
+    "groundedness": 1.0,
+    "completeness_classification_accuracy": 0.6666666667,
+    "hallucination_rate": 0.0
+  },
+  "per_question": [
+    {
+      "question_id": "SAMPLE_Q1",
+      "answer_id": "SAMPLE_A1",
+      "answerability": "answerable",
+      "gold_citations": [
+        {
+          "article": "제1조",
+          "clause": null,
+          "item": null,
+          "sub_item": null,
+          "node_id": null,
+          "regulation_title": "학칙",
+          "source_file": "sample_university_alpha/학칙.pdf"
+        }
+      ],
+      "citation_accuracy": 1.0,
+      "groundedness": 1.0,
+      "expected_completeness": "complete",
+      "actual_completeness": "complete",
+      "completeness_classification": 1.0,
+      "hallucination_detected": false,
+      "confidence": 1.0
+    },
+    {
+      "question_id": "SAMPLE_Q2",
+      "answer_id": "SAMPLE_A2",
+      "answerability": "answerable",
+      "gold_citations": [
+        {
+          "article": "제2조",
+          "clause": null,
+          "item": null,
+          "sub_item": null,
+          "node_id": null,
+          "regulation_title": "학칙",
+          "source_file": "sample_university_alpha/학칙.pdf"
+        }
+      ],
+      "citation_accuracy": 0.0,
+      "groundedness": 1.0,
+      "expected_completeness": "complete",
+      "actual_completeness": "complete",
+      "completeness_classification": 1.0,
+      "hallucination_detected": false,
+      "confidence": 0.8
+    },
+    {
+      "question_id": "SAMPLE_Q3",
+      "answer_id": "SAMPLE_A3",
+      "answerability": "missing_regulation",
+      "gold_citations": [
+        {
+          "article": "제3조",
+          "clause": null,
+          "item": null,
+          "sub_item": null,
+          "node_id": null,
+          "regulation_title": "학칙",
+          "source_file": "sample_university_beta/학칙.pdf"
+        }
+      ],
+      "citation_accuracy": 1.0,
+      "groundedness": 1.0,
+      "expected_completeness": "missing_regulation",
+      "actual_completeness": "complete",
+      "completeness_classification": 0.0,
+      "hallucination_detected": false,
+      "confidence": 0.7
+    }
+  ],
+  "answers": []
+}

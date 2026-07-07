@@ -58,6 +58,18 @@ Completed:
   - university-level PDF smoke evaluation
   - source page coverage checks
   - CSV report output
+- Benchmark, retrieval, QA, and error analysis
+  - UniRegBench parser/question fixtures
+  - deterministic BM25 retrieval baseline
+  - LLM-independent grounded QA with MockLLM
+  - traceable QA answer JSONL
+  - deterministic multi-label QA error analysis
+- Experimental evaluation
+  - JSON experiment configs
+  - reproducible run metadata
+  - parser/retrieval/QA/missing-regulation/cross-university experiments
+  - paper-style JSON, CSV, and Markdown outputs
+  - aggregate experiment summaries
 
 ## Milestone 1: Section Parser
 
@@ -416,4 +428,189 @@ Reproducible run:
   --benchmark-dir benchmark \
   --predictions benchmark/retrieval/predictions.sample.jsonl \
   --report-dir benchmark/reports
+```
+
+## Milestone 12: Retrieval Evaluation
+
+Status: implemented.
+
+Goal:
+
+- Evaluate retrieval quality independently from LLMs.
+
+Scope:
+
+- deterministic BM25 baseline
+- retrieval runner over UniRegBench questions
+- article, clause, item, and sub-item retrieval units
+- Recall@1, Recall@3, Recall@5, MRR, and nDCG@5
+- JSONL prediction output
+- JSON and CSV reports
+
+Implemented behavior:
+
+- `unireg.retrieval` provides BM25 indexing, retrieval corpus construction,
+  benchmark execution, report writing, and CLI entry points.
+- Retrieval units are built from existing `ProjectionBuilder` BM25 documents;
+  the parser is unchanged.
+- `scripts/unireg_retrieval.py`, `python -m unireg.retrieval`, and the
+  `unireg-retrieval` console script run the deterministic BM25 baseline.
+- Retrieval evaluation uses hierarchical citation matching so article-level and
+  fine-grained units can be evaluated together.
+- Generated BM25 predictions are ignored by git while the benchmark fixtures
+  remain versioned.
+
+Reproducible run:
+
+```bash
+.venv/bin/python scripts/unireg_retrieval.py bm25 \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --predictions benchmark/retrieval/predictions.bm25.jsonl \
+  --units article,clause,item,sub_item \
+  --scope question_source \
+  --top-k 5
+```
+
+Current local five-university result:
+
+```text
+questions=20
+documents=2316
+Recall@1=0.700
+Recall@3=1.000
+Recall@5=1.000
+MRR=0.842
+nDCG@5=0.883
+```
+
+## Milestone 13: Grounded QA Framework
+
+Status: implemented.
+
+Goal:
+
+- Build an LLM-independent grounded QA framework on top of retrieval.
+
+Scope:
+
+- QA pipeline
+- Evidence Package
+- abstract LLM adapter
+- deterministic MockLLM adapter
+- Grounded Answer schema
+- hallucination guardrails
+- QA evaluation metrics
+- single-question and benchmark CLI
+- traceable JSON/CSV/JSONL reports
+
+Implemented behavior:
+
+- `unireg.qa` owns the QA pipeline without changing parser or retrieval
+  architecture.
+- The Evidence Package stores retrieved nodes, citations, source pages,
+  metadata, incompleteness flags, scores, and normalized confidence.
+- `LLMAdapter` defines the provider boundary; only `MockLLMAdapter` is
+  implemented.
+- `GroundedAnswer` stores answer text, citations, evidence, completeness status,
+  confidence, reasoning metadata, exact LLM input, raw LLM output, guardrail
+  events, and optional evaluation.
+- Guardrails remove unsupported citations, force unknown answers when evidence
+  is absent, and downgrade complete answers without supported citations.
+- QA reports allow reconstructing
+  `Question -> Retrieved Evidence -> LLM Input -> Grounded Answer -> Evaluation`
+  without ambiguity.
+
+Benchmark run:
+
+```bash
+.venv/bin/python scripts/unireg_qa.py \
+  --benchmark \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --retriever bm25 \
+  --llm mock \
+  --scope question_source \
+  --top-k 5
+```
+
+Current local five-university MockLLM result:
+
+```text
+questions=20
+citation_accuracy=0.700
+groundedness=1.000
+completeness_classification=0.800
+hallucination_rate=0.000
+```
+
+## Milestone 13.5: Explainability and Error Analysis
+
+Status: implemented.
+
+Goal:
+
+- Explain why each grounded QA result succeeded or failed.
+
+Scope:
+
+- Consume Milestone 13 QA answer trace JSONL.
+- Enrich older traces with benchmark answerability labels and gold citations
+  when needed.
+- Classify failures with a deterministic multi-label error taxonomy.
+- Produce JSON, CSV, and Markdown reports.
+- Report aggregate success/failure counts, error distributions,
+  answerability/retriever/university breakdowns, top failed questions, and
+  representative examples.
+
+Implemented behavior:
+
+- `unireg.analysis` owns trace loading, classification, aggregation, report
+  writing, and CLI entry points.
+- The parser and retrieval architectures are unchanged.
+- The QA evaluation row now includes `answerability` and `gold_citations` so new
+  QA traces are self-contained for later analysis.
+- `scripts/unireg_analyze_errors.py`, `python -m unireg.analysis`, the
+  `unireg-error-analysis` console script, and `unireg analyze-errors` all run
+  the analyzer.
+
+Reproducible run:
+
+```bash
+.venv/bin/python scripts/unireg_analyze_errors.py \
+  --traces benchmark/reports/qa_mock_answers.jsonl \
+  --out benchmark/reports/error_analysis \
+  --benchmark-dir benchmark
+```
+
+## Milestone 14: Experimental Evaluation
+
+Status: implemented.
+
+Goal:
+
+- Make UniReg experiments reproducible, comparable, and publication-ready.
+
+Scope:
+
+- `unireg.experiments` package
+- JSON config loader and validator
+- experiment runner
+- run metadata
+- parser, retrieval, QA, missing-regulation, and cross-university experiment
+  orchestration
+- JSON/CSV/Markdown outputs
+- paper-style table generation
+- multi-run summarizer
+- synthetic offline fixtures for CI-safe tests
+
+Implemented CLI:
+
+```bash
+.venv/bin/python scripts/unireg_experiment.py run \
+  --config experiments/configs/sample_offline.json
+
+.venv/bin/python scripts/unireg_experiment.py summarize \
+  --runs experiments/runs \
+  --out experiments/reports/summary.md
 ```

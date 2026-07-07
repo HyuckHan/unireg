@@ -86,6 +86,39 @@
 
 ## Phase 4
 
+- Retrieval evaluation
+  - BM25 baseline
+  - Article, clause, item, and sub-item retrieval units
+  - Recall@1, Recall@3, Recall@5, MRR, and nDCG@5
+  - Prediction JSONL output
+  - Retrieval CSV/JSON reports
+
+## Phase 5
+
+- Grounded QA framework
+  - Evidence Package
+  - abstract LLM adapter
+  - MockLLM adapter
+  - Grounded Answer schema
+  - hallucination guardrails
+  - citation accuracy, groundedness, completeness, hallucination metrics
+  - traceable QA reports
+- Explainability and error analysis
+  - QA trace ingestion
+  - deterministic multi-label error taxonomy
+  - JSON, CSV, and Markdown error reports
+  - answerability, retriever, and university breakdowns
+  - representative failure examples for paper analysis
+- Experimental evaluation
+  - JSON experiment configs
+  - reproducible run metadata
+  - parser, retrieval, QA, missing-regulation, and cross-university experiment
+    orchestration
+  - paper-style result tables
+  - aggregate run summaries
+
+## Phase 6
+
 - Reference resolution
   - Corpus-level reference matching
   - Missing internal rule confirmation
@@ -95,40 +128,40 @@
   - Missing-source preservation
   - Graph edge preparation
 
-## Phase 5
+## Phase 7
 
 - JSON schema publication
 - Export compatibility tests across schema versions
 - CLI export commands
 
-## Phase 6
+## Phase 8
 
 - Citation compatibility validation
 - Citation display integration
 - Citation checks against source text hashes
 
-## Phase 7
+## Phase 9
 
 - Knowledge graph
 - Reference graph
 - Missing-reference graph edges
 - Regulation-to-regulation links
 
-## Phase 8
+## Phase 10
 
 - Search engine
   - BM25
   - Metadata-aware filtering
   - Hierarchy-aware result grouping
 
-## Phase 9
+## Phase 11
 
 - Vector database
 - Embedding chunk strategy
 - Article, clause, and item chunks
 - Metadata preservation
 
-## Phase 10
+## Phase 12
 
 - RAG
 - Hybrid retrieval
@@ -136,7 +169,7 @@
 - Answer completeness classification
 - Missing-regulation reporting
 
-## Phase 11
+## Phase 13
 
 - Web UI
 - Regulation browser
@@ -144,7 +177,7 @@
 - Citation display
 - Missing-reference display
 
-## Phase 12
+## Phase 14
 
 - Multi-university support
 - Institution metadata

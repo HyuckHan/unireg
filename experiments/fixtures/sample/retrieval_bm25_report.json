@@ -1,0 +1,74 @@
+{
+  "config": {
+    "method": "bm25",
+    "top_k": 5,
+    "scope": "question_source",
+    "unit_types": ["article", "clause"]
+  },
+  "document_count": 8,
+  "predictions": [],
+  "evaluation": {
+    "metrics": {
+      "question_count": 3,
+      "evaluated_question_count": 3,
+      "recall_at_1": 0.6666666667,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.8333333333,
+      "ndcg_at_5": 0.8769765845
+    },
+    "per_question": [
+      {
+        "id": "SAMPLE_Q1",
+        "answerability": "answerable",
+        "hit_rank": 1,
+        "reciprocal_rank": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      },
+      {
+        "id": "SAMPLE_Q2",
+        "answerability": "answerable",
+        "hit_rank": 2,
+        "reciprocal_rank": 0.5,
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "ndcg_at_5": 0.6309297536
+      },
+      {
+        "id": "SAMPLE_Q3",
+        "answerability": "missing_regulation",
+        "hit_rank": 1,
+        "reciprocal_rank": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      }
+    ]
+  },
+  "hits_by_question": {},
+  "per_university": [
+    {
+      "group": "sample_university_alpha",
+      "question_count": 2,
+      "recall_at_1": 0.5,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.75,
+      "ndcg_at_5": 0.8154648768
+    },
+    {
+      "group": "sample_university_beta",
+      "question_count": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_5": 1.0
+    }
+  ]
+}

@@ -16,3 +16,15 @@ unireg-eval/**/*.pdf
 # Generated UniRegBench reports.
 benchmark/reports/*
 !benchmark/reports/.gitkeep
+benchmark/retrieval/predictions.*.jsonl
+!benchmark/retrieval/predictions.sample.jsonl
+
+# Generated experiment outputs.
+experiments/runs/*
+!experiments/runs/.gitkeep
+experiments/reports/*
+!experiments/reports/.gitkeep
+experiments/tables/*
+!experiments/tables/.gitkeep
+experiments/figures/*
+!experiments/figures/.gitkeep

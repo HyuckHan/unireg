@@ -54,3 +54,52 @@ Generated reports are written as JSON, CSV, and Markdown under
 The sample retrieval prediction file is a gold-first reproducibility fixture.
 Replace `benchmark/retrieval/predictions.sample.jsonl` with real retrieval
 outputs when evaluating a search or RAG system.
+
+Run the BM25 retrieval baseline:
+
+```bash
+.venv/bin/python scripts/unireg_retrieval.py bm25 \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --predictions benchmark/retrieval/predictions.bm25.jsonl \
+  --units article,clause,item,sub_item \
+  --scope question_source \
+  --top-k 5
+```
+
+This generates ranked predictions plus JSON/CSV retrieval reports. The generated
+BM25 prediction file is ignored by git.
+
+Run grounded QA with the deterministic MockLLM adapter:
+
+```bash
+.venv/bin/python scripts/unireg_qa.py \
+  --benchmark \
+  --benchmark-dir benchmark \
+  --report-dir benchmark/reports \
+  --retriever bm25 \
+  --llm mock \
+  --scope question_source \
+  --top-k 5
+```
+
+The QA answers JSONL contains the full trace for each benchmark question:
+
+```text
+question -> retrieved evidence -> LLM input -> grounded answer -> evaluation
+```
+
+Analyze QA failures for publication-oriented error analysis:
+
+```bash
+.venv/bin/python scripts/unireg_analyze_errors.py \
+  --traces benchmark/reports/qa_mock_answers.jsonl \
+  --out benchmark/reports/error_analysis \
+  --benchmark-dir benchmark
+```
+
+The error analyzer writes:
+
+- `benchmark/reports/error_analysis/error_analysis.json`
+- `benchmark/reports/error_analysis/error_analysis.csv`
+- `benchmark/reports/error_analysis/error_analysis.md`

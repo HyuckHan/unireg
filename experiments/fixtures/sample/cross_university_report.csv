@@ -1,0 +1,3 @@
+university,path,ok,elapsed_seconds,pdf_pages,structural_pages,structural_page_start,structural_page_end,page_coverage,title,raw_title,institution,regulation_code,title_warnings,chapter_count,section_count,article_count,clause_count,item_count,sub_item_count,appendix_count,citation_count,diagnostic_count,error
+sample_university_alpha,sample_university_alpha/학칙.pdf,True,0.010,2,2,1,2,1.000,학칙,학칙,표본대학교,,metadata_title_cleaned,1,0,2,2,0,0,0,4,1,
+sample_university_beta,sample_university_beta/학칙.pdf,True,0.011,2,2,1,2,1.000,학칙,학칙,예시대학교,,,1,0,2,2,0,0,0,4,0,

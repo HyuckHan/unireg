@@ -1,0 +1,50 @@
+{
+  "name": "sample_offline_experiment",
+  "experiment_types": [
+    "parser_accuracy",
+    "retrieval",
+    "grounded_qa",
+    "missing_regulation",
+    "cross_university"
+  ],
+  "corpus_location": "../fixtures/sample/corpus",
+  "benchmark_dir": "../fixtures/sample/benchmark",
+  "benchmark_question_file": "../fixtures/sample/benchmark/questions/sample_questions.jsonl",
+  "parser_output_location": "../fixtures/sample/parser_report.json",
+  "retrieval_method": "bm25",
+  "qa_method": "mock",
+  "evaluation_metrics": [
+    "article_extraction_accuracy",
+    "recall_at_3",
+    "citation_accuracy",
+    "hallucination_rate"
+  ],
+  "output_dir": "../runs/sample_offline",
+  "random_seed": 0,
+  "notes": "Synthetic offline fixture for deterministic Milestone 14 smoke tests.",
+  "tags": ["sample", "offline", "ci"],
+  "parser": {
+    "mode": "precomputed",
+    "report_path": "../fixtures/sample/parser_report.json"
+  },
+  "retrieval": {
+    "mode": "precomputed",
+    "report_path": "../fixtures/sample/retrieval_bm25_report.json",
+    "scope": "question_source",
+    "top_k": 5,
+    "units": "article,clause"
+  },
+  "qa": {
+    "mode": "precomputed",
+    "report_path": "../fixtures/sample/qa_mock_report.json",
+    "traces_path": "../fixtures/sample/qa_traces.jsonl"
+  },
+  "missing_regulation": {
+    "mode": "precomputed",
+    "traces_path": "../fixtures/sample/qa_traces.jsonl"
+  },
+  "cross_university": {
+    "mode": "precomputed",
+    "report_path": "../fixtures/sample/cross_university_report.csv"
+  }
+}

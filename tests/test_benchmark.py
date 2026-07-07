@@ -58,6 +58,7 @@ def test_retrieval_evaluation_computes_recall_and_mrr() -> None:
     assert result.metrics.recall_at_3 == 1.0
     assert result.metrics.recall_at_5 == 1.0
     assert result.metrics.mrr == 1.0
+    assert result.metrics.ndcg_at_5 == 1.0
 
 
 def test_retrieval_evaluation_uses_source_file_to_disambiguate_citations() -> None:
@@ -81,6 +82,38 @@ def test_retrieval_evaluation_uses_source_file_to_disambiguate_citations() -> No
 
     assert result.metrics.recall_at_1 == 0.0
     assert result.metrics.mrr == 0.0
+    assert result.metrics.ndcg_at_5 == 0.0
+
+
+def test_retrieval_evaluation_accepts_more_specific_hierarchy_matches() -> None:
+    gold_article = GoldCitation(
+        article="제27조",
+        regulation_title="학칙",
+        source_file="unireg-eval/university_seoulwomen/학칙.pdf",
+    )
+    question_id = "Q_SEOULWOMEN_GRAD_CREDITS_001"
+    clause_prediction = RetrievalPrediction(
+        question_id=question_id,
+        ranked_citations=[
+            GoldCitation(
+                article="제27조",
+                clause="1",
+                regulation_title="학칙",
+                source_file="unireg-eval/university_seoulwomen/학칙.pdf",
+            )
+        ],
+    )
+    dataset_question = next(
+        question
+        for question in load_benchmark(BENCHMARK_DIR).questions
+        if question.id == question_id
+    )
+
+    result = evaluate_retrieval([dataset_question], [clause_prediction])
+
+    assert dataset_question.gold_citations == [gold_article]
+    assert result.metrics.recall_at_1 == 1.0
+    assert result.metrics.ndcg_at_5 == 1.0
 
 
 def test_parser_evaluation_runs_against_tracked_sample_pdf() -> None:
@@ -118,6 +151,7 @@ def test_benchmark_cli_run_writes_reproducible_reports(tmp_path: Path) -> None:
     assert report["parser"]["ok_count"] == 5
     assert report["retrieval"]["metrics"]["question_count"] == 20
     assert report["retrieval"]["metrics"]["mrr"] == 1.0
+    assert report["retrieval"]["metrics"]["ndcg_at_5"] == 1.0
     assert (report_dir / "parser_report.csv").exists()
     assert (report_dir / "retrieval_report.csv").exists()
     assert (report_dir / "benchmark_report.md").exists()

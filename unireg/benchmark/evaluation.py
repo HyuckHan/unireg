@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import statistics
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -32,6 +33,7 @@ class RetrievalMetrics:
     recall_at_3: float
     recall_at_5: float
     mrr: float
+    ndcg_at_5: float
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -41,6 +43,7 @@ class RetrievalMetrics:
             "recall_at_3": self.recall_at_3,
             "recall_at_5": self.recall_at_5,
             "mrr": self.mrr,
+            "ndcg_at_5": self.ndcg_at_5,
         }
 
 
@@ -147,28 +150,35 @@ def evaluate_retrieval(
     }
     per_question: list[dict[str, object]] = []
     reciprocal_ranks: list[float] = []
+    ndcg_scores: list[float] = []
     recall_hits = {1: 0, 3: 0, 5: 0}
     evaluated = 0
 
     for question in questions:
-        gold_keys = {_citation_key(citation) for citation in question.gold_citations}
-        if not gold_keys:
+        gold_citations = question.gold_citations
+        if not gold_citations:
             continue
         evaluated += 1
         prediction = prediction_by_question.get(question.id)
         ranked = [] if prediction is None else prediction.ranked_citations
-        hit_rank = _first_hit_rank(gold_keys, ranked)
+        hit_rank = _first_hit_rank(gold_citations, ranked)
         for cutoff in recall_hits:
             if hit_rank is not None and hit_rank <= cutoff:
                 recall_hits[cutoff] += 1
         reciprocal_rank = 0.0 if hit_rank is None else 1.0 / hit_rank
+        ndcg_at_5 = _ndcg_at_k(gold_citations, ranked, k=5)
         reciprocal_ranks.append(reciprocal_rank)
+        ndcg_scores.append(ndcg_at_5)
         per_question.append(
             {
                 "id": question.id,
                 "answerability": question.answerability.value,
                 "hit_rank": hit_rank,
                 "reciprocal_rank": reciprocal_rank,
+                "recall_at_1": 1.0 if hit_rank is not None and hit_rank <= 1 else 0.0,
+                "recall_at_3": 1.0 if hit_rank is not None and hit_rank <= 3 else 0.0,
+                "recall_at_5": 1.0 if hit_rank is not None and hit_rank <= 5 else 0.0,
+                "ndcg_at_5": ndcg_at_5,
             }
         )
 
@@ -180,6 +190,7 @@ def evaluate_retrieval(
         recall_at_3=recall_hits[3] / denominator,
         recall_at_5=recall_hits[5] / denominator,
         mrr=sum(reciprocal_ranks) / denominator,
+        ndcg_at_5=sum(ndcg_scores) / denominator,
     )
     return RetrievalEvaluationResult(metrics=metrics, per_question=per_question)
 
@@ -398,27 +409,106 @@ def _label_matches_required(label: str, required: GoldCitation) -> bool:
 
 
 def _first_hit_rank(
-    gold_keys: set[tuple[str, ...]],
+    gold_citations: list[GoldCitation],
     ranked_citations: list[GoldCitation],
 ) -> int | None:
     for index, citation in enumerate(ranked_citations, start=1):
-        if _citation_key(citation) in gold_keys:
+        if _is_relevant_citation(citation, gold_citations):
             return index
     return None
 
 
-def _citation_key(citation: GoldCitation) -> tuple[str, ...]:
-    if citation.node_id is not None:
-        return ("node", citation.node_id)
-    return (
-        "legal",
-        citation.regulation_title or "",
-        citation.article or "",
-        citation.clause or "",
-        citation.item or "",
-        citation.sub_item or "",
-        citation.source_file or "",
-    )
+def _ndcg_at_k(
+    gold_citations: list[GoldCitation],
+    ranked_citations: list[GoldCitation],
+    *,
+    k: int,
+) -> float:
+    if not gold_citations or k <= 0:
+        return 0.0
+    gains = _relevance_gains_at_k(gold_citations, ranked_citations, k=k)
+    dcg = _discounted_gain(gains)
+    ideal_relevant_count = min(len(gold_citations), k)
+    idcg = _discounted_gain([1.0] * ideal_relevant_count)
+    if idcg == 0:
+        return 0.0
+    return dcg / idcg
+
+
+def _discounted_gain(gains: list[float]) -> float:
+    return sum(gain / math.log2(index + 2) for index, gain in enumerate(gains))
+
+
+def _relevance_gains_at_k(
+    gold_citations: list[GoldCitation],
+    ranked_citations: list[GoldCitation],
+    *,
+    k: int,
+) -> list[float]:
+    matched_gold_indexes: set[int] = set()
+    gains: list[float] = []
+    for candidate in ranked_citations[:k]:
+        matched_index = _first_unmatched_gold_index(
+            candidate,
+            gold_citations,
+            matched_gold_indexes,
+        )
+        if matched_index is None:
+            gains.append(0.0)
+            continue
+        matched_gold_indexes.add(matched_index)
+        gains.append(1.0)
+    return gains
+
+
+def _first_unmatched_gold_index(
+    candidate: GoldCitation,
+    gold_citations: list[GoldCitation],
+    matched_gold_indexes: set[int],
+) -> int | None:
+    for index, gold in enumerate(gold_citations):
+        if index in matched_gold_indexes:
+            continue
+        if _citation_matches(gold, candidate):
+            return index
+    return None
+
+
+def _is_relevant_citation(
+    candidate: GoldCitation,
+    gold_citations: list[GoldCitation],
+) -> bool:
+    return any(_citation_matches(gold, candidate) for gold in gold_citations)
+
+
+def _citation_matches(gold: GoldCitation, candidate: GoldCitation) -> bool:
+    if gold.node_id is not None:
+        return candidate.node_id == gold.node_id
+
+    checks = [
+        (gold.regulation_title, candidate.regulation_title, _normalize_plain),
+        (gold.source_file, candidate.source_file, _normalize_path),
+        (gold.article, candidate.article, _normalize_plain),
+        (gold.clause, candidate.clause, _normalized_clause),
+        (gold.item, candidate.item, _normalized_item),
+        (gold.sub_item, candidate.sub_item, _normalized_sub_item),
+    ]
+    for expected, actual, normalizer in checks:
+        if expected is None:
+            continue
+        if actual is None:
+            return False
+        if normalizer(expected) != normalizer(actual):
+            return False
+    return True
+
+
+def _normalize_plain(value: str) -> str:
+    return value.strip()
+
+
+def _normalize_path(value: str) -> str:
+    return str(Path(value))
 
 
 def _normalized_clause(value: str) -> str:
@@ -492,6 +582,7 @@ def _write_markdown(path: Path, result: BenchmarkRunResult) -> None:
                 f"- Recall@3: {metrics.recall_at_3:.3f}",
                 f"- Recall@5: {metrics.recall_at_5:.3f}",
                 f"- MRR: {metrics.mrr:.3f}",
+                f"- nDCG@5: {metrics.ndcg_at_5:.3f}",
             ]
         )
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
@@ -535,7 +626,16 @@ def _write_retrieval_csv(
     with path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(
             file,
-            fieldnames=["id", "answerability", "hit_rank", "reciprocal_rank"],
+            fieldnames=[
+                "id",
+                "answerability",
+                "hit_rank",
+                "reciprocal_rank",
+                "recall_at_1",
+                "recall_at_3",
+                "recall_at_5",
+                "ndcg_at_5",
+            ],
         )
         writer.writeheader()
         if result is None:
